@@ -1,38 +1,114 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: power-smart-gateway
   cloud:
     gateway:
       routes:
-        - id: worker-service
+        # ========== 萤丰前端适配路由（/build/* 路径） ==========
+
+        # 人员 - 班组
+        - id: labour-team
           uri: lb://power-smart-worker
-          predicates:
-            - Path=/api/v1/workers/**
-        - id: device-service
+          predicates: [Path=/build/labourTeam/**]
+          filters: [StripPrefix=0]
+
+        # 人员 - 分包商
+        - id: labour-subcontractor
+          uri: lb://power-smart-worker
+          predicates: [Path=/build/labourSubcontractor/**]
+          filters: [StripPrefix=0]
+
+        # 人员 - 工种字典
+        - id: labour-worktype
+          uri: lb://power-smart-worker
+          predicates: [Path=/build/labourWorktype/**]
+          filters: [StripPrefix=0]
+
+        # 人员 - 进出场
+        - id: labour-advance-retreat
+          uri: lb://power-smart-worker
+          predicates: [Path=/build/labourAdvanceRetreat/**]
+          filters: [StripPrefix=0]
+
+        # 人员 - 建设单位
+        - id: labour-construction-unit
+          uri: lb://power-smart-worker
+          predicates: [Path=/build/labourConstructionUnit/**]
+          filters: [StripPrefix=0]
+
+        # 视频监控 + 萤石云 token
+        - id: video-monitor
           uri: lb://power-smart-device
-          predicates:
-            - Path=/api/v1/devices/**
-        - id: progress-service
-          uri: lb://power-smart-progress
-          predicates:
-            - Path=/api/v1/progress/**
-        - id: hazard-service
+          predicates: [Path=/build/videoMonitor/**,/build/ysy/**]
+          filters: [StripPrefix=0]
+
+        # 设备位置台账树
+        - id: equipment-location
+          uri: lb://power-smart-device
+          predicates: [Path=/build/equipmentLocation/**]
+          filters: [StripPrefix=0]
+
+        # 安全/隐患
+        - id: safety-material
           uri: lb://power-smart-hazard
-          predicates:
-            - Path=/api/v1/hazards/**
-        - id: dashboard-service
-          uri: lb://power-smart-dashboard
-          predicates:
-            - Path=/api/v1/dashboard/**
-        - id: system-service
+          predicates: [Path=/build/safetyMaterial/**]
+          filters: [StripPrefix=0]
+
+        # 项目
+        - id: project
+          uri: lb://power-smart-system
+          predicates: [Path=/build/project/**]
+          filters: [StripPrefix=0]
+
+        # 登录/用户
+        - id: admin-common
           uri: lb://power-smart-system
           predicates:
-            - Path=/api/v1/system/**
+            - Path=/login,/logout,/build/adminUser/**,/build/adminCommon/**
+          filters: [StripPrefix=0]
+
+        # ========== 进度 ==========
+        - id: work-progress
+          uri: lb://power-smart-progress
+          predicates: [Path=/work/work/**]
+          filters: [StripPrefix=0]
+
+        # ========== 内部 REST API（兼容原有路径） ==========
+        - id: worker-internal
+          uri: lb://power-smart-worker
+          predicates: [Path=/api/v1/workers/**,/api/v1/teams/**]
+
+        - id: device-internal
+          uri: lb://power-smart-device
+          predicates: [Path=/api/v1/devices/**]
+
+        - id: hazard-internal
+          uri: lb://power-smart-hazard
+          predicates: [Path=/api/v1/hazards/**]
+
+        - id: progress-internal
+          uri: lb://power-smart-progress
+          predicates: [Path=/api/v1/progress/**]
+
+        - id: system-internal
+          uri: lb://power-smart-system
+          predicates: [Path=/api/v1/users/**,/api/v1/projects/**]
+
+        - id: dashboard-internal
+          uri: lb://power-smart-dashboard
+          predicates: [Path=/api/v1/dashboard/**]
+
     discovery:
       locator:
         enabled: true
+
   main:
     web-application-type: reactive
 
-server:
-  port: 8080
+# Nacos 注册中心
+spring.cloud.nacos.discovery:
+  server-addr: ${NACOS_HOST:127.0.0.1}:8848
+  namespace: ${NACOS_NAMESPACE:public}
