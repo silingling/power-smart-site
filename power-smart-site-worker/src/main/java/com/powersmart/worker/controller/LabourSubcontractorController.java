@@ -10,11 +10,10 @@ import com.powersmart.worker.mapper.LabourSubcontractorMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-/**
- * 分包商管理 — 对接同业电力（tongye）前端 build/labourSubcontractor/*
- */
 @RestController
 @RequestMapping("/build/labourSubcontractor")
 @RequiredArgsConstructor
@@ -23,7 +22,7 @@ public class LabourSubcontractorController {
     private final LabourSubcontractorMapper mapper;
 
     @SuppressWarnings("unchecked")
-    private <T> Page<T> extractPage(Map<String, Object> params) {
+    private Page<LabourSubcontractor> extractPage(Map<String, Object> params) {
         int p = 1, s = 20;
         if (params != null) {
             if (params.containsKey("page")) p = Integer.parseInt(params.get("page").toString());
@@ -70,19 +69,31 @@ public class LabourSubcontractorController {
         return Result.ok();
     }
 
-    @SuppressWarnings("unchecked")
+    @PostMapping("/selcetIdsAndName")
+    public Result<List<Map<String, Object>>> selcetIdsAndName(@RequestBody(required = false) Map<String, Object> params) {
+        LambdaQueryWrapper<LabourSubcontractor> wrapper = new LambdaQueryWrapper<>();
+        if (params != null && params.containsKey("projectId") && params.get("projectId") != null)
+            wrapper.eq(LabourSubcontractor::getProjectId, Long.valueOf(params.get("projectId").toString()));
+        wrapper.eq(LabourSubcontractor::getStatus, 1);
+        List<LabourSubcontractor> list = mapper.selectList(wrapper);
+        List<Map<String, Object>> result = list.stream().map(s -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", s.getId());
+            m.put("subcontractorName", s.getSubcontractorName());
+            return m;
+        }).collect(Collectors.toList());
+        return Result.ok(result);
+    }
+
     private LambdaQueryWrapper<LabourSubcontractor> buildWrapper(Map<String, Object> params) {
         LambdaQueryWrapper<LabourSubcontractor> wrapper = new LambdaQueryWrapper<>();
         if (params != null) {
-            if (params.containsKey("projectId") && params.get("projectId") != null) {
+            if (params.containsKey("projectId") && params.get("projectId") != null)
                 wrapper.eq(LabourSubcontractor::getProjectId, Long.valueOf(params.get("projectId").toString()));
-            }
-            if (params.containsKey("subcontractorName") && params.get("subcontractorName") != null) {
+            if (params.containsKey("subcontractorName") && params.get("subcontractorName") != null)
                 wrapper.like(LabourSubcontractor::getSubcontractorName, params.get("subcontractorName").toString());
-            }
-            if (params.containsKey("status") && params.get("status") != null) {
+            if (params.containsKey("status") && params.get("status") != null)
                 wrapper.eq(LabourSubcontractor::getStatus, Integer.parseInt(params.get("status").toString()));
-            }
         }
         wrapper.orderByDesc(LabourSubcontractor::getCreatedAt);
         return wrapper;

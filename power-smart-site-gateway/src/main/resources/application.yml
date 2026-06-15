@@ -7,48 +7,59 @@ spring:
   cloud:
     gateway:
       routes:
-        # ========== 同业电力前端适配路由（/build/* 路径） ==========
+        # ========== 同业电力前端适配路由 ==========
 
-        # 人员 - 班组
+        # 登录/登出
+        - id: login
+          uri: lb://power-smart-system
+          predicates: [Path=/login,/logout]
+          filters: [StripPrefix=0]
+
+        # 人员模块
         - id: labour-team
           uri: lb://power-smart-worker
           predicates: [Path=/build/labourTeam/**]
           filters: [StripPrefix=0]
 
-        # 人员 - 分包商
         - id: labour-subcontractor
           uri: lb://power-smart-worker
           predicates: [Path=/build/labourSubcontractor/**]
           filters: [StripPrefix=0]
 
-        # 人员 - 工种字典
         - id: labour-worktype
           uri: lb://power-smart-worker
           predicates: [Path=/build/labourWorktype/**]
           filters: [StripPrefix=0]
 
-        # 人员 - 进出场
         - id: labour-advance-retreat
           uri: lb://power-smart-worker
           predicates: [Path=/build/labourAdvanceRetreat/**]
           filters: [StripPrefix=0]
 
-        # 人员 - 建设单位
         - id: labour-construction-unit
           uri: lb://power-smart-worker
           predicates: [Path=/build/labourConstructionUnit/**]
           filters: [StripPrefix=0]
 
-        # 视频监控 + 萤石云 token
+        - id: labour-infocollection
+          uri: lb://power-smart-worker
+          predicates: [Path=/build/labourInfocollection/**]
+          filters: [StripPrefix=0]
+
+        # 视频/监控
         - id: video-monitor
           uri: lb://power-smart-device
           predicates: [Path=/build/videoMonitor/**,/build/ysy/**]
           filters: [StripPrefix=0]
 
-        # 设备位置台账树
         - id: equipment-location
           uri: lb://power-smart-device
           predicates: [Path=/build/equipmentLocation/**]
+          filters: [StripPrefix=0]
+
+        - id: equipment-assets
+          uri: lb://power-smart-device
+          predicates: [Path=/build/equipmentAssets/**]
           filters: [StripPrefix=0]
 
         # 安全/隐患
@@ -57,26 +68,53 @@ spring:
           predicates: [Path=/build/safetyMaterial/**]
           filters: [StripPrefix=0]
 
-        # 项目
-        - id: project
-          uri: lb://power-smart-system
-          predicates: [Path=/build/project/**]
+        # 质量
+        - id: qual-material
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/qualMaterial/**]
           filters: [StripPrefix=0]
 
-        # 登录/用户
-        - id: admin-common
+        # 项目信息
+        - id: project-info
           uri: lb://power-smart-system
-          predicates:
-            - Path=/login,/logout,/build/adminUser/**,/build/adminCommon/**
+          predicates: [Path=/build/projectInfo/**,/build/singleBuildingInfo/**,/build/projectUser/**]
           filters: [StripPrefix=0]
 
-        # ========== 进度 ==========
-        - id: work-progress
+        - id: project-eval
+          uri: lb://power-smart-system
+          predicates: [Path=/build/evalLevel/**]
+          filters: [StripPrefix=0]
+
+        # 进度
+        - id: progress
           uri: lb://power-smart-progress
-          predicates: [Path=/work/work/**]
+          predicates: [Path=/work/work/**,/build/progressPlanManageDetails/**]
           filters: [StripPrefix=0]
 
-        # ========== 内部 REST API（兼容原有路径） ==========
+        # 系统管理
+        - id: admin-user
+          uri: lb://power-smart-system
+          predicates: [Path=/adminUser/**,/adminCommon/**,/adminDept/**]
+          filters: [StripPrefix=0]
+
+        - id: admin-other
+          uri: lb://power-smart-system
+          predicates: [Path=/adminConfig/**,/adminSupplyPoint/**]
+          filters: [StripPrefix=0]
+
+        # 监控点告警 + 环境数据
+        - id: monitor-alert
+          uri: lb://power-smart-device
+          predicates: [Path=/build/monitorPointAlert/**,/build/eqMonitorDataAt/**]
+          filters: [StripPrefix=0]
+
+        # 看板
+        - id: dashboard
+          uri: lb://power-smart-dashboard
+          predicates: [Path=/build/dashboard/**]
+          filters: [StripPrefix=0]
+
+        # ========== 内部 REST API（兼容） ==========
         - id: worker-internal
           uri: lb://power-smart-worker
           predicates: [Path=/api/v1/workers/**,/api/v1/teams/**]
@@ -95,7 +133,7 @@ spring:
 
         - id: system-internal
           uri: lb://power-smart-system
-          predicates: [Path=/api/v1/users/**,/api/v1/projects/**]
+          predicates: [Path=/api/v1/users/**,/api/v1/projects/**,/api/v1/system/**]
 
         - id: dashboard-internal
           uri: lb://power-smart-dashboard
@@ -108,7 +146,6 @@ spring:
   main:
     web-application-type: reactive
 
-# Nacos 注册中心
 spring.cloud.nacos.discovery:
   server-addr: ${NACOS_HOST:127.0.0.1}:8848
   namespace: ${NACOS_NAMESPACE:public}

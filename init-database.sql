@@ -384,3 +384,48 @@ INSERT INTO labour_worktype (worktype_name, worktype_code, cert_required, sort_o
 ('普工', 'D010', NULL, 8),
 ('安全员', 'D011', '安全员证', 9),
 ('监理', 'D012', '监理工程师证', 10);
+
+-- 安全资料表
+CREATE TABLE safety_material (
+  id bigint NOT NULL AUTO_INCREMENT,
+  project_id bigint DEFAULT NULL,
+  catalog_id bigint DEFAULT NULL COMMENT '目录ID',
+  title varchar(200) NOT NULL,
+  file_url varchar(500) DEFAULT NULL,
+  file_type varchar(20) DEFAULT NULL,
+  upload_by bigint DEFAULT NULL,
+  is_collect tinyint DEFAULT '0' COMMENT '0-未收藏 1-已收藏',
+  status tinyint DEFAULT '1' COMMENT '1-正常 0-删除',
+  created_at datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_project_catalog (project_id, catalog_id)
+) ENGINE=InnoDB COMMENT='安全资料';
+
+CREATE TABLE safety_material_catalog (
+  id bigint NOT NULL AUTO_INCREMENT,
+  project_id bigint DEFAULT NULL,
+  parent_id bigint DEFAULT '0' COMMENT '上级目录ID',
+  name varchar(100) NOT NULL,
+  sort_order int DEFAULT '0',
+  created_at datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB COMMENT='安全资料目录';
+
+-- 部门表
+CREATE TABLE sys_dept (
+  id bigint NOT NULL AUTO_INCREMENT,
+  parent_id bigint DEFAULT '0',
+  dept_name varchar(100) NOT NULL,
+  dept_type varchar(50) DEFAULT NULL COMMENT 'company/department/team',
+  sort_order int DEFAULT '0',
+  status tinyint DEFAULT '1' COMMENT '1-启用 0-禁用',
+  created_at datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB COMMENT='部门组织架构';
+
+-- 初始化部门数据
+INSERT INTO sys_dept (parent_id, dept_name, dept_type, sort_order) VALUES
+(0, '山西同业电力', 'company', 1),
+(1, '项目管理部', 'department', 2),
+(1, '安全质量部', 'department', 3),
+(1, '工程技术部', 'department', 4);
