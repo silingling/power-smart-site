@@ -19,6 +19,7 @@ public class SafetyMaterial {
     private String fileType;           // pdf/doc/jpg
     private Long uploadBy;
     private Integer isCollect;         // 0-未收藏 1-已收藏
+    private Integer isQual;            // 0-安全资料 1-质量资料
     private Integer status;            // 1-正常 0-删除
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

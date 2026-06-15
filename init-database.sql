@@ -395,6 +395,7 @@ CREATE TABLE safety_material (
   file_type varchar(20) DEFAULT NULL,
   upload_by bigint DEFAULT NULL,
   is_collect tinyint DEFAULT '0' COMMENT '0-未收藏 1-已收藏',
+  is_qual tinyint DEFAULT '0' COMMENT '0-安全资料 1-质量资料',
   status tinyint DEFAULT '1' COMMENT '1-正常 0-删除',
   created_at datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -433,3 +434,131 @@ INSERT INTO sys_dept (parent_id, dept_name, dept_type, sort_order) VALUES
 (1, '项目管理部', 'department', 2),
 (1, '安全质量部', 'department', 3),
 (1, '工程技术部', 'department', 4);
+
+-- ============================================
+-- 第二轮补齐: 38个缺失API所需的表
+-- ============================================
+
+-- 设备资产表（供 equipmentAssets/* 使用）
+CREATE TABLE IF NOT EXISTS equipment_assets (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    device_name VARCHAR(200) NOT NULL COMMENT '设备名称',
+    device_code VARCHAR(100) COMMENT '设备编号',
+    device_type VARCHAR(100) COMMENT '设备类型(摄像头/扬尘/噪声/塔吊等)',
+    project_id BIGINT DEFAULT 0 COMMENT '所属项目',
+    location_id BIGINT DEFAULT 0 COMMENT '位置节点ID',
+    monitor_point_type VARCHAR(50) COMMENT '监测点类型',
+    status INT DEFAULT 0 COMMENT '0-离线 1-在线',
+    video_monitor_id BIGINT DEFAULT 0 COMMENT '关联摄像头ID',
+    brand VARCHAR(100) COMMENT '品牌',
+    model VARCHAR(100) COMMENT '型号',
+    install_date DATE COMMENT '安装日期',
+    remark VARCHAR(500) COMMENT '备注',
+    is_deleted INT DEFAULT 0,
+    create_by VARCHAR(100),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备资产';
+
+-- 单体楼栋表（供 singleBuildingInfo/* 使用）
+CREATE TABLE IF NOT EXISTS single_building_info (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目',
+    building_name VARCHAR(200) NOT NULL COMMENT '楼栋名称',
+    building_code VARCHAR(100) COMMENT '楼栋编号',
+    building_type VARCHAR(50) COMMENT '类型(住宅/商业/配套)',
+    total_floors INT DEFAULT 0 COMMENT '总楼层',
+    total_area DECIMAL(18,2) DEFAULT 0 COMMENT '总面积(m²)',
+    start_date DATE COMMENT '开工日期',
+    end_date DATE COMMENT '竣工日期',
+    status INT DEFAULT 0 COMMENT '0-未开工 1-施工中 2-已竣工',
+    remark VARCHAR(500),
+    is_deleted INT DEFAULT 0,
+    create_by VARCHAR(100),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='单体楼栋信息';
+
+-- 监测点告警表（供 monitorPointAlert/* 使用）
+CREATE TABLE IF NOT EXISTS monitor_point_alert (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT DEFAULT 0 COMMENT '所属项目',
+    device_asset_id BIGINT DEFAULT 0 COMMENT '关联设备ID',
+    point_type VARCHAR(50) NOT NULL COMMENT '监测类型(扬尘/噪声/水电/温湿度)',
+    alert_content VARCHAR(500) COMMENT '告警内容',
+    alert_level VARCHAR(20) DEFAULT 'normal' COMMENT '级别(normal/warning/critical)',
+    alert_value DECIMAL(18,2) COMMENT '触发值',
+    threshold_value DECIMAL(18,2) COMMENT '阈值',
+    status INT DEFAULT 0 COMMENT '0-未处理 1-已处理 2-已忽略',
+    handle_time DATETIME COMMENT '处理时间',
+    handle_by VARCHAR(100) COMMENT '处理人',
+    handle_remark VARCHAR(500),
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='监测点告警';
+
+-- 水电供应点表（供 adminSupplyPoint/* 使用）
+CREATE TABLE IF NOT EXISTS supply_point (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT DEFAULT 0 COMMENT '所属项目',
+    point_name VARCHAR(200) NOT NULL COMMENT '供应点名称',
+    point_type VARCHAR(20) COMMENT 'water-供水 electric-供电',
+    device_code VARCHAR(100) COMMENT '设备编号',
+    location_desc VARCHAR(300) COMMENT '位置描述',
+    unit_price DECIMAL(10,4) DEFAULT 0 COMMENT '单价',
+    current_reading DECIMAL(18,2) DEFAULT 0 COMMENT '当前读数',
+    status INT DEFAULT 0 COMMENT '0-停用 1-运行中',
+    is_deleted INT DEFAULT 0,
+    create_by VARCHAR(100),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='水电供应点';
+
+-- 质量资料变更日志表（供 qualMaterialChangelog/* 使用）
+CREATE TABLE IF NOT EXISTS qual_material_changelog (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    material_id BIGINT NOT NULL COMMENT '关联资料ID',
+    project_id BIGINT DEFAULT 0,
+    change_type VARCHAR(50) COMMENT '变更类型(add/update/delete/collect)',
+    change_content TEXT COMMENT '变更内容',
+    operator VARCHAR(100) COMMENT '操作人',
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='质量资料变更日志';
+
+-- 安全资料变更日志表（供 safetyMaterialChangelog/* 使用）
+CREATE TABLE IF NOT EXISTS safety_material_changelog (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    material_id BIGINT NOT NULL COMMENT '关联资料ID',
+    project_id BIGINT DEFAULT 0,
+    change_type VARCHAR(50) COMMENT '变更类型',
+    change_content TEXT COMMENT '变更内容',
+    operator VARCHAR(100) COMMENT '操作人',
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全资料变更日志';
+
+-- 评价等级表（供 evalLevel/* 使用）
+CREATE TABLE IF NOT EXISTS eval_level (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT DEFAULT 0,
+    level_name VARCHAR(100) NOT NULL COMMENT '等级名称(优/良/合格/不合格)',
+    level_type VARCHAR(50) COMMENT '评价类型(safety/quality/progress)',
+    score_min DECIMAL(5,2) COMMENT '最低分',
+    score_max DECIMAL(5,2) COMMENT '最高分',
+    color VARCHAR(20) COMMENT '显示颜色',
+    remark VARCHAR(500),
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评价等级';
+
+-- 系统配置表（供 adminConfig/* 使用）
+CREATE TABLE IF NOT EXISTS sys_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_name VARCHAR(100) NOT NULL UNIQUE COMMENT '配置键',
+    config_value VARCHAR(500) COMMENT '配置值',
+    config_desc VARCHAR(500) COMMENT '说明',
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置';

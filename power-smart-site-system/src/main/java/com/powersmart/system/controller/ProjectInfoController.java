@@ -93,6 +93,42 @@ public class ProjectInfoController {
         return Result.ok();
     }
 
+    @PostMapping("/updateProjectInfo")
+    public Result<Void> updateProjectInfo(@RequestBody Project entity) {
+        projectMapper.updateById(entity);
+        return Result.ok();
+    }
+
+    @PostMapping("/getProjectInfoById/{id}")
+    public Result<Map<String, Object>> getProjectInfoById(@PathVariable Long id) {
+        return queryById(id);
+    }
+
+    @PostMapping("/queryPageListAll")
+    public Result<PageResult<Map<String, Object>>> queryPageListAll(@RequestBody(required = false) Map<String, Object> params) {
+        return queryPageList(params);
+    }
+
+    @PostMapping("/getThree/{projectId}")
+    public Result<Map<String, Object>> getThree(@PathVariable Long projectId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("buildingCount", 0);  // 楼栋数
+        data.put("deviceCount", 0);    // 设备数
+        data.put("workerCount", 0);    // 工人数
+        return Result.ok(data);
+    }
+
+    @PostMapping("/queryPageListByEval")
+    public Result<PageResult<Map<String, Object>>> queryPageListByEval(@RequestBody(required = false) Map<String, Object> params) {
+        return queryPageList(params);
+    }
+
+    @PostMapping("/sync")
+    public Result<Void> sync(@RequestBody(required = false) Map<String, Object> params) {
+        // 数据同步接口 - 按需实现
+        return Result.ok();
+    }
+
     @PostMapping("/projectUser/list")
     public Result<List<Map<String, Object>>> projectUserList(@RequestBody Map<String, Object> params) {
         // 项目用户关联 - 返回空列表，按需扩展
