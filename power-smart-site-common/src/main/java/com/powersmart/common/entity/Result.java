@@ -10,7 +10,7 @@ import java.io.Serializable;
 /**
  * 统一响应结果
  * <p>
- * 兼容萤丰 YFConstruction 前端格式：
+ * 兼容同业电力（tongye）前端格式：
  * 成功 → { code: 0, data: {...}, msg: "操作成功" }
  * 失败 → { code: 非0, msg: "错误信息" }
  */

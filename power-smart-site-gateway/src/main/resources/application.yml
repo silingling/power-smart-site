@@ -7,7 +7,7 @@ spring:
   cloud:
     gateway:
       routes:
-        # ========== 萤丰前端适配路由（/build/* 路径） ==========
+        # ========== 同业电力前端适配路由（/build/* 路径） ==========
 
         # 人员 - 班组
         - id: labour-team

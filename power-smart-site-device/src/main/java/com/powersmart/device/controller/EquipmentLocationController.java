@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 设备位置台账树 — 对接萤丰前端 build/equipmentLocation/*
+ * 设备位置台账树 — 对接同业电力（tongye）前端 build/equipmentLocation/*
  */
 @RestController
 @RequestMapping("/build/equipmentLocation")

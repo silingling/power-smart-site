@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * 建设单位管理 — 对接萤丰前端 build/labourConstructionUnit/*
+ * 建设单位管理 — 对接同业电力（tongye）前端 build/labourConstructionUnit/*
  */
 @RestController
 @RequestMapping("/build/labourConstructionUnit")

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 视频监控管理 — 对接萤丰前端 build/videoMonitor/* + build/ysy/*
+ * 视频监控管理 — 对接同业电力（tongye）前端 build/videoMonitor/* + build/ysy/*
  */
 @RestController
 @RequestMapping("/build")

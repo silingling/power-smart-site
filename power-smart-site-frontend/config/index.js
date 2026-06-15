@@ -18,14 +18,14 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/api': {
-        target: 'http://zhgd.sdyingfeng.cn/',
+        target: 'http://localhost:8080/',
         changeOrigin: true,
         pathRewrite: {
           '^/api': ''
         }
       },
       '/file': {
-        target: 'http://zhgd.sdyingfeng.cn/',//此处代理的不对，待完善
+        target: 'http://localhost:8080/',//此处代理的不对，待完善
         changeOrigin: true,
         pathRewrite: {
           '^/file': ''

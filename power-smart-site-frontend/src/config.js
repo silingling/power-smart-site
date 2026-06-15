@@ -13,7 +13,7 @@ const baiduKey = '8SPafncsFsyVXFGGfUEmmDNwcQo6UrI9' // 百度地图API密钥
 
 // WebSocket配置模块，由于socket会使vue代理失效，这里使用独立的基础路径
 const startSocket = false // 是否启用WebSocket
-let socketBaseUrl = 'http://zhgd.sdyingfeng.cn?target=PCM' // 开发基础路径
+let socketBaseUrl = 'http://localhost:8080?target=PCM' // 开发基础路径
 
 // 生产环境使用环境变量中的API地址
 if (process.env.NODE_ENV === 'production') {

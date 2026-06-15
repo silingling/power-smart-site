@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 工种字典 — 对接萤丰前端 build/labourWorktype/*
+ * 工种字典 — 对接同业电力（tongye）前端 build/labourWorktype/*
  */
 @RestController
 @RequestMapping("/build/labourWorktype")

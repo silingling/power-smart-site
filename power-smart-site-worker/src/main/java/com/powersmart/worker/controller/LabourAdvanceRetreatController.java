@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * 工人进出场记录 — 对接萤丰前端 build/labourAdvanceRetreat/*
+ * 工人进出场记录 — 对接同业电力（tongye）前端 build/labourAdvanceRetreat/*
  */
 @RestController
 @RequestMapping("/build/labourAdvanceRetreat")
