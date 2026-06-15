@@ -23,13 +23,6 @@ exports.cssLoaders = function (options) {
     }
   }
 
-  const postcssLoader = {
-    loader: 'postcss-loader',
-    options: {
-      sourceMap: options.sourceMap
-    }
-  }
-
   // generate loader string to be used with extract text plugin
   function generateLoaders(loader, loaderOptions) {
     const loaders = []
@@ -37,7 +30,6 @@ exports.cssLoaders = function (options) {
     // Extract CSS when that option is specified
     // (which is the case during production build)
     if (options.extract) {
-      // loaders.push(MiniCssExtractPlugin.loader)
       loaders.push({
         loader: MiniCssExtractPlugin.loader,
         options: {
@@ -50,10 +42,6 @@ exports.cssLoaders = function (options) {
 
     loaders.push(cssLoader)
 
-    if (options.usePostCSS) {
-      loaders.push(postcssLoader)
-    }
-
     if (loader) {
       loaders.push({
         loader: loader + '-loader',
@@ -65,20 +53,32 @@ exports.cssLoaders = function (options) {
 
     return loaders
   }
-  // https://vue-loader.vuejs.org/en/configurations/extract-css.html
-  return {
-    css: generateLoaders(),
-    postcss: generateLoaders(),
-    less: generateLoaders('less'),
-    sass: generateLoaders('sass', {
-      indentedSyntax: true
-    }),
-    scss: generateLoaders('sass').concat({
+
+  // 创建包含 sass-resources-loader 的 scss 加载链
+  function scssLoaders() {
+    const baseLoaders = generateLoaders('sass', {
+      implementation: require('sass')
+    })
+    // sass-resources-loader 必须放在 sass-loader 之后（webpack 倒序执行）
+    // 这样它会先运行，注入 xr-theme 变量后再交给 sass 编译
+    baseLoaders.push({
       loader: 'sass-resources-loader',
       options: {
         resources: path.resolve(__dirname, '../src/styles/xr-theme.scss')
       }
+    })
+    return baseLoaders
+  }
+
+  // https://vue-loader.vuejs.org/en/configurations/extract-css.html
+  return {
+    css: generateLoaders(),
+    less: generateLoaders('less'),
+    sass: generateLoaders('sass', {
+      indentedSyntax: true,
+      implementation: require('sass')
     }),
+    scss: scssLoaders(),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
   }
