@@ -1,10 +1,8 @@
 package com.powersmart.system.controller;
 
-import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.powersmart.common.entity.Result;
 import com.powersmart.system.entity.EvalLevel;
-import com.powersmart.system.mapper.EvalLevelMapper;
+import com.powersmart.system.service.EvalLevelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,14 +17,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EvalLevelController {
 
-    private final EvalLevelMapper mapper;
+    private final EvalLevelService evalLevelService;
 
     @PostMapping("/selectList")
     public Result<List<EvalLevel>> selectList(@RequestBody(required = false) Map<String, Object> params) {
-        LambdaQueryWrapper<EvalLevel> wrapper = new LambdaQueryWrapper<>();
-        if (params != null && params.containsKey("projectId") && params.get("projectId") != null)
-            wrapper.eq(EvalLevel::getProjectId, Long.valueOf(params.get("projectId").toString()));
-        wrapper.orderByAsc(EvalLevel::getScoreMin);
-        return Result.ok(mapper.selectList(wrapper));
+        return Result.ok(evalLevelService.selectList(params));
     }
 }

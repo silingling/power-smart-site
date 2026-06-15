@@ -1,9 +1,8 @@
 package com.powersmart.hazard.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.powersmart.common.entity.Result;
 import com.powersmart.hazard.entity.SafetyMaterialChangelog;
-import com.powersmart.hazard.mapper.SafetyMaterialChangelogMapper;
+import com.powersmart.hazard.service.SafetyMaterialChangelogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,20 +16,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SafetyMaterialChangelogController {
 
-    private final SafetyMaterialChangelogMapper mapper;
+    private final SafetyMaterialChangelogService safetyMaterialChangelogService;
 
     @PostMapping("/add")
     public Result<Void> add(@RequestBody SafetyMaterialChangelog entity) {
-        mapper.insert(entity);
+        safetyMaterialChangelogService.add(entity);
         return Result.ok();
     }
 
     @PostMapping("/selectByPid/{pid}")
     public Result<List<SafetyMaterialChangelog>> selectByPid(@PathVariable Long pid) {
-        List<SafetyMaterialChangelog> list = mapper.selectList(
-                new LambdaQueryWrapper<SafetyMaterialChangelog>()
-                        .eq(SafetyMaterialChangelog::getMaterialId, pid)
-                        .orderByDesc(SafetyMaterialChangelog::getCreateTime));
-        return Result.ok(list);
+        return Result.ok(safetyMaterialChangelogService.selectByPid(pid));
     }
 }
