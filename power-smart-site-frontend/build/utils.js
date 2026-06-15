@@ -71,18 +71,12 @@ exports.cssLoaders = function (options) {
     postcss: generateLoaders(),
     less: generateLoaders('less'),
     sass: generateLoaders('sass', {
-      indentedSyntax: true,
-      implementation: require('sass')
+      indentedSyntax: true
     }),
-    scss: generateLoaders('sass', {
-      implementation: require('sass'),
-      sassOptions: {
-        quietDeps: true
-      }
-    }).concat({
-      loader: 'style-resources-loader',
+    scss: generateLoaders('sass').concat({
+      loader: 'sass-resources-loader',
       options: {
-        patterns: [path.resolve(__dirname, '../src/styles/xr-theme.scss')]
+        resources: path.resolve(__dirname, '../src/styles/xr-theme.scss')
       }
     }),
     stylus: generateLoaders('stylus'),
