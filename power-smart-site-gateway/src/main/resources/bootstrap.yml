@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: power-smart-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:127.0.0.1}:8848
+        namespace: ${NACOS_NAMESPACE:public}

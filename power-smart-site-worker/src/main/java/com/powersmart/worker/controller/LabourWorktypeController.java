@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 工种字典 — 对接同业电力（tongye）前端 build/labourWorktype/*
+ * 工种字典 — 同业电力前端 build/labourWorktype/*
  */
 @RestController
 @RequestMapping("/build/labourWorktype")
@@ -27,15 +27,27 @@ public class LabourWorktypeController {
                 new LambdaQueryWrapper<LabourWorktype>()
                         .eq(LabourWorktype::getStatus, 1)
                         .orderByAsc(LabourWorktype::getSortOrder));
-
-        List<Map<String, Object>> result = list.stream().map(w -> {
+        return Result.ok(list.stream().map(w -> {
             Map<String, Object> m = new java.util.LinkedHashMap<>();
             m.put("id", w.getId());
             m.put("worktypeName", w.getWorktypeName());
             m.put("worktypeCode", w.getWorktypeCode());
             return m;
-        }).collect(Collectors.toList());
-        return Result.ok(result);
+        }).collect(Collectors.toList()));
+    }
+
+    @PostMapping("/selcetIdsAndName")
+    public Result<List<Map<String, Object>>> selcetIdsAndName() {
+        List<LabourWorktype> list = worktypeMapper.selectList(
+                new LambdaQueryWrapper<LabourWorktype>()
+                        .eq(LabourWorktype::getStatus, 1)
+                        .orderByAsc(LabourWorktype::getSortOrder));
+        return Result.ok(list.stream().map(w -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", w.getId());
+            m.put("name", w.getWorktypeName());
+            return m;
+        }).collect(Collectors.toList()));
     }
 
     @PostMapping("/list")
