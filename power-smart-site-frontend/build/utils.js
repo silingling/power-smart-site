@@ -75,7 +75,8 @@ exports.cssLoaders = function (options) {
       implementation: require('sass')
     }),
     scss: generateLoaders('sass', {
-      implementation: require('sass')
+      implementation: require('sass'),
+      additionalData: "@import '../src/styles/xr-theme.scss';\n"
     }),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
