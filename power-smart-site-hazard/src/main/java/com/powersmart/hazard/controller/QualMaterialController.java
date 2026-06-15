@@ -4,13 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.powersmart.common.entity.PageResult;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
 import com.powersmart.hazard.entity.SafetyMaterial;
-import com.powersmart.hazard.entity.SafetyMaterialCatalog;
-import com.powersmart.hazard.mapper.SafetyMaterialCatalogMapper;
 import com.powersmart.hazard.mapper.SafetyMaterialMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +14,7 @@ import java.util.*;
 
 /**
  * 质量资料管理 — 同业电力前端 build/qualMaterial/*
- * 复用安全资料的存储表 + 目录表
+ * 复用安全资料的存储表
  */
 @RestController
 @RequestMapping("/build/qualMaterial")
@@ -27,7 +22,6 @@ import java.util.*;
 public class QualMaterialController {
 
     private final SafetyMaterialMapper mapper;
-    private final SafetyMaterialCatalogMapper catalogMapper;
 
     @SuppressWarnings("unchecked")
     private Page<SafetyMaterial> extractPage(Map<String, Object> params) {
@@ -96,61 +90,6 @@ public class QualMaterialController {
             mapper.updateById(m);
         }
         return Result.ok();
-    }
-
-    @PostMapping("/qualMaterialCatalog/add")
-    public Result<Void> catalogAdd(@RequestBody SafetyMaterialCatalog entity) {
-        catalogMapper.insert(entity);
-        return Result.ok();
-    }
-
-    @PostMapping("/qualMaterialCatalog/selectTree/{projectId}")
-    public Result<List<Map<String, Object>>> catalogSelectTree(@PathVariable Long projectId) {
-        List<Map<String, Object>> result = new ArrayList<>();
-        List<SafetyMaterialCatalog> roots = catalogMapper.selectList(
-                new LambdaQueryWrapper<SafetyMaterialCatalog>()
-                        .eq(SafetyMaterialCatalog::getProjectId, projectId)
-                        .eq(SafetyMaterialCatalog::getParentId, 0));
-        for (SafetyMaterialCatalog r : roots) {
-            Map<String, Object> node = catalogToMap(r);
-            node.put("children", buildCatalogChildren(r.getId()));
-            result.add(node);
-        }
-        return Result.ok(result);
-    }
-
-    @PostMapping("/qualMaterialCatalog/delete/{id}")
-    public Result<Void> catalogDelete(@PathVariable Long id) {
-        catalogMapper.deleteById(id);
-        return Result.ok();
-    }
-
-    @PostMapping("/qualMaterialCatalog/selectById/{id}")
-    public Result<SafetyMaterialCatalog> catalogSelectById(@PathVariable Long id) {
-        return Result.ok(catalogMapper.selectById(id));
-    }
-
-    // ---- helper ----
-
-    private List<Map<String, Object>> buildCatalogChildren(Long parentId) {
-        List<Map<String, Object>> children = new ArrayList<>();
-        List<SafetyMaterialCatalog> list = catalogMapper.selectList(
-                new LambdaQueryWrapper<SafetyMaterialCatalog>().eq(SafetyMaterialCatalog::getParentId, parentId));
-        for (SafetyMaterialCatalog c : list) {
-            Map<String, Object> node = catalogToMap(c);
-            node.put("children", buildCatalogChildren(c.getId()));
-            children.add(node);
-        }
-        return children;
-    }
-
-    private Map<String, Object> catalogToMap(SafetyMaterialCatalog c) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", c.getId());
-        m.put("name", c.getName());
-        m.put("parentId", c.getParentId());
-        m.put("projectId", c.getProjectId());
-        return m;
     }
 
     private LambdaQueryWrapper<SafetyMaterial> buildWrapper(Map<String, Object> params) {

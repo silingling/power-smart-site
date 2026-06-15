@@ -25,11 +25,11 @@ public class SafetyMaterialChangelogController {
         return Result.ok();
     }
 
-    @PostMapping("/selectByPid/{materialId}")
-    public Result<List<SafetyMaterialChangelog>> selectByPid(@PathVariable Long materialId) {
+    @PostMapping("/selectByPid/{pid}")
+    public Result<List<SafetyMaterialChangelog>> selectByPid(@PathVariable Long pid) {
         List<SafetyMaterialChangelog> list = mapper.selectList(
                 new LambdaQueryWrapper<SafetyMaterialChangelog>()
-                        .eq(SafetyMaterialChangelog::getMaterialId, materialId)
+                        .eq(SafetyMaterialChangelog::getMaterialId, pid)
                         .orderByDesc(SafetyMaterialChangelog::getCreateTime));
         return Result.ok(list);
     }

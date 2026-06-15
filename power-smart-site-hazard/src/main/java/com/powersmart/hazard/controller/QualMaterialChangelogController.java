@@ -25,11 +25,11 @@ public class QualMaterialChangelogController {
         return Result.ok();
     }
 
-    @PostMapping("/selectByPid/{materialId}")
-    public Result<List<QualMaterialChangelog>> selectByPid(@PathVariable Long materialId) {
+    @PostMapping("/selectByPid/{pid}")
+    public Result<List<QualMaterialChangelog>> selectByPid(@PathVariable Long pid) {
         List<QualMaterialChangelog> list = mapper.selectList(
                 new LambdaQueryWrapper<QualMaterialChangelog>()
-                        .eq(QualMaterialChangelog::getMaterialId, materialId)
+                        .eq(QualMaterialChangelog::getMaterialId, pid)
                         .orderByDesc(QualMaterialChangelog::getCreateTime));
         return Result.ok(list);
     }

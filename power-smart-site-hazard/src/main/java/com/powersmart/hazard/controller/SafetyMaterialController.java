@@ -6,8 +6,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
 import com.powersmart.hazard.entity.SafetyMaterial;
-import com.powersmart.hazard.entity.SafetyMaterialCatalog;
-import com.powersmart.hazard.mapper.SafetyMaterialCatalogMapper;
 import com.powersmart.hazard.mapper.SafetyMaterialMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +21,6 @@ import java.util.Map;
 public class SafetyMaterialController {
 
     private final SafetyMaterialMapper mapper;
-    private final SafetyMaterialCatalogMapper catalogMapper;
 
     // ===== 资料管理 =====
 
@@ -78,40 +75,6 @@ public class SafetyMaterialController {
     public Result<Void> deleteCollect(@PathVariable Long id) {
         SafetyMaterial m = mapper.selectById(id);
         if (m != null) { m.setIsCollect(0); mapper.updateById(m); }
-        return Result.ok();
-    }
-
-    // ===== 目录管理 =====
-
-    @PostMapping("/safetyMaterialCatalog/add")
-    public Result<Void> catalogAdd(@RequestBody SafetyMaterialCatalog entity) {
-        catalogMapper.insert(entity);
-        return Result.ok();
-    }
-
-    @PostMapping("/safetyMaterialCatalog/selectTree/{projectId}")
-    public Result<java.util.List<SafetyMaterialCatalog>> catalogSelectTree(@PathVariable Long projectId) {
-        return Result.ok(catalogMapper.selectList(
-                new LambdaQueryWrapper<SafetyMaterialCatalog>()
-                        .eq(SafetyMaterialCatalog::getProjectId, projectId)
-                        .orderByAsc(SafetyMaterialCatalog::getSortOrder)));
-    }
-
-    @PostMapping("/safetyMaterialCatalog/selectById/{id}")
-    public Result<SafetyMaterialCatalog> catalogSelectById(@PathVariable Long id) {
-        return Result.ok(catalogMapper.selectById(id));
-    }
-
-    @PostMapping("/safetyMaterialCatalog/delete/{id}")
-    public Result<Void> catalogDelete(@PathVariable Long id) {
-        catalogMapper.deleteById(id);
-        return Result.ok();
-    }
-
-    @PostMapping("/safetyMaterialCatalog/deleteOneselfAndSublevel/{id}")
-    public Result<Void> catalogDeleteWithChildren(@PathVariable Long id) {
-        catalogMapper.deleteById(id);
-        catalogMapper.delete(new LambdaQueryWrapper<SafetyMaterialCatalog>().eq(SafetyMaterialCatalog::getParentId, id));
         return Result.ok();
     }
 

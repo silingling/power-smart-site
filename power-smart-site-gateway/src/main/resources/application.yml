@@ -74,6 +74,26 @@ spring:
           predicates: [Path=/build/qualMaterial/**]
           filters: [StripPrefix=0]
 
+        - id: qual-material-catalog
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/qualMaterialCatalog/**]
+          filters: [StripPrefix=0]
+
+        - id: qual-material-changelog
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/qualMaterialChangelog/**]
+          filters: [StripPrefix=0]
+
+        - id: safety-material-catalog
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/safetyMaterialCatalog/**]
+          filters: [StripPrefix=0]
+
+        - id: safety-material-changelog
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/safetyMaterialChangelog/**]
+          filters: [StripPrefix=0]
+
         # 项目信息
         - id: project-info
           uri: lb://power-smart-system
