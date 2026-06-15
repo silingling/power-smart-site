@@ -1,30 +1,31 @@
 package com.powersmart.system.controller;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.powersmart.common.auth.JwtUtil;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
 import com.powersmart.system.entity.SysDept;
 import com.powersmart.system.entity.SysUser;
 import com.powersmart.system.mapper.SysDeptMapper;
 import com.powersmart.system.mapper.SysUserMapper;
-import com.powersmart.system.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
 /**
- * 系统管理 — 同业电力前端 build/adminUser/* — 登录/用户/部门/业务类型
+ * 系统管理 — 登录/用户/部门/业务类型
  */
 @RestController
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final SysUserService userService;
     private final SysUserMapper userMapper;
     private final SysDeptMapper deptMapper;
+    private final JwtUtil jwtUtil;
 
     // ==================== 登录 ====================
 
@@ -32,18 +33,26 @@ public class AdminController {
     public Result<Map<String, Object>> login(@RequestBody Map<String, String> params) {
         String username = params.get("username");
         String password = params.get("password");
+
         if (StrUtil.isBlank(username) || StrUtil.isBlank(password))
             return Result.fail("用户名或密码不能为空");
 
         SysUser user = userMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
-        if (user == null || !user.getPassword().equals(password))
+        if (user == null)
             return Result.fail("用户名或密码错误");
+
+        // MD5 校验（与 SysUserServiceImpl 保持一致）
+        String hashed = DigestUtil.md5Hex(password);
+
+        if (!user.getPassword().equals(hashed))
+            return Result.fail("用户名或密码错误");
+
         if (user.getStatus() == 0)
             return Result.fail("账号已禁用");
 
-        // 生成简单 token（实际应替换为 JWT）
-        String token = UUID.randomUUID().toString().replace("-", "");
+        // 生成 JWT token
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("token", token);
@@ -72,7 +81,6 @@ public class AdminController {
 
     @PostMapping("/adminUser/initUser")
     public Result<Map<String, Object>> initUser() {
-        // 初始化用户信息（返回当前用户）
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("userId", 1);
         info.put("username", "admin");
@@ -83,10 +91,20 @@ public class AdminController {
 
     @PostMapping("/adminUser/queryUserList")
     public Result<PageResult<Map<String, Object>>> queryUserList(@RequestBody(required = false) Map<String, Object> params) {
-        Page<SysUser> page = new Page<>(1, 50);
+        int pageNum = 1, pageSize = 50;
+        if (params != null) {
+            if (params.containsKey("page")) pageNum = safeParseInt(params.get("page"), 1);
+            if (params.containsKey("pageSize")) pageSize = safeParseInt(params.get("pageSize"), 50);
+            if (params.containsKey("limit")) pageSize = safeParseInt(params.get("limit"), 50);
+        }
+        // pageSize 安全上限
+        pageSize = Math.min(pageSize, 200);
+
+        Page<SysUser> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         if (params != null && params.containsKey("realName") && params.get("realName") != null)
             wrapper.like(SysUser::getRealName, params.get("realName").toString());
+
         List<SysUser> users = userMapper.selectPage(page, wrapper).getRecords();
         List<Map<String, Object>> list = new ArrayList<>();
         for (SysUser u : users) {
@@ -95,9 +113,10 @@ public class AdminController {
             m.put("username", u.getUsername());
             m.put("realName", u.getRealName());
             m.put("phone", u.getPhone());
+            // 不返回密码到前端
             list.add(m);
         }
-        return Result.ok(PageResult.of(list, page.getTotal(), (int) page.getCurrent(), (int) page.getSize()));
+        return Result.ok(PageResult.of(list, page.getTotal(), pageNum, pageSize));
     }
 
     // ==================== adminCommon ====================
@@ -139,5 +158,15 @@ public class AdminController {
             }
         }
         return tree;
+    }
+
+    /** 安全解析整数，解析失败返回默认值 */
+    private int safeParseInt(Object value, int defaultValue) {
+        if (value == null) return defaultValue;
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 }

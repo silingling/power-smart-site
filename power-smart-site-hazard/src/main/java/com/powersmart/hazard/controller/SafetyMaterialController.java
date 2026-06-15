@@ -119,9 +119,9 @@ public class SafetyMaterialController {
     private Page<SafetyMaterial> extractPage(Map<String, Object> params) {
         int p = 1, s = 20;
         if (params != null) {
-            if (params.containsKey("page")) p = Integer.parseInt(params.get("page").toString());
-            if (params.containsKey("limit")) s = Integer.parseInt(params.get("limit").toString());
-            if (params.containsKey("pageSize")) s = Integer.parseInt(params.get("pageSize").toString());
+            if (params.get("page") != null) try { p = Integer.parseInt(params.get("page").toString()); } catch (NumberFormatException ignored) {}
+            if (params.get("limit") != null) try { s = Integer.parseInt(params.get("limit").toString()); } catch (NumberFormatException ignored) {}
+            if (params.get("pageSize") != null) try { s = Integer.parseInt(params.get("pageSize").toString()); } catch (NumberFormatException ignored) {}
         }
         return new Page<>(p, s);
     }

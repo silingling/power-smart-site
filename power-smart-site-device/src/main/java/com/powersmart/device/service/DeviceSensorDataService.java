@@ -1,6 +1,7 @@
 package com.powersmart.device.service;
 
 import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.QueryApi;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +14,9 @@ import java.util.stream.Collectors;
 
 /**
  * 设备传感器时序数据查询服务
- * <p>
- * 读取 InfluxDB 中存储的设备实时/历史工况数据。
- * 数据由 IoT 网关通过 MQTT 写入，格式：
- * measurement: device_sensor_data
- * tags: device_code, project_id, sensor_type
- * fields: value(float), unit(string)
+ *
+ * 安全说明：使用参数化查询（Flux 变量绑定）防止 Flux 注入。
+ * 严禁直接拼接用户输入到 Flux 字符串中。
  */
 @Slf4j
 @Service
@@ -29,16 +27,21 @@ public class DeviceSensorDataService {
 
     /**
      * 查询设备最新一条传感器数据
+     * 使用参数化查询防止 Flux 注入
      */
     public Map<String, Object> getLatestSensorData(String deviceCode) {
-        String flux = String.format(
-                "from(bucket: \"sensor_data\") " +
-                        "|> range(start: -1h) " +
-                        "|> filter(fn: (r) => r[\"device_code\"] == \"%s\") " +
-                        "|> last()",
-                deviceCode);
+        // 校验：只允许字母数字和连字符/下划线
+        validateSafeInput(deviceCode, "deviceCode");
 
-        List<FluxTable> tables = influxDbClient.getQueryApi().query(flux);
+        String flux = "from(bucket: \"sensor_data\") "
+                + "|> range(start: -1h) "
+                + "|> filter(fn: (r) => r[\"device_code\"] == v.deviceCode) "
+                + "|> last()";
+
+        Map<String, Object> variables = Map.of("deviceCode", deviceCode);
+        QueryApi queryApi = influxDbClient.getQueryApi();
+        List<FluxTable> tables = queryApi.query(flux, variables);
+
         Map<String, Object> result = new LinkedHashMap<>();
 
         for (FluxTable table : tables) {
@@ -62,16 +65,21 @@ public class DeviceSensorDataService {
 
     /**
      * 查询设备传感器历史趋势数据（最近 N 小时）
+     * 使用参数化查询防止 Flux 注入
      */
     public Map<String, List<Map<String, Object>>> getHistoryTrend(String deviceCode, int hours) {
-        String flux = String.format(
-                "from(bucket: \"sensor_data\") " +
-                        "|> range(start: -%dh) " +
-                        "|> filter(fn: (r) => r[\"device_code\"] == \"%s\") " +
-                        "|> aggregateWindow(every: 5m, fn: mean)",
-                hours, deviceCode);
+        validateSafeInput(deviceCode, "deviceCode");
 
-        List<FluxTable> tables = influxDbClient.getQueryApi().query(flux);
+        String flux = "from(bucket: \"sensor_data\") "
+                + "|> range(start: -v.hours) "
+                + "|> filter(fn: (r) => r[\"device_code\"] == v.deviceCode) "
+                + "|> aggregateWindow(every: 5m, fn: mean)";
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deviceCode", deviceCode);
+        variables.put("hours", hours + "h");
+
+        List<FluxTable> tables = influxDbClient.getQueryApi().query(flux, variables);
         Map<String, List<Map<String, Object>>> trend = new LinkedHashMap<>();
 
         for (FluxTable table : tables) {
@@ -95,7 +103,8 @@ public class DeviceSensorDataService {
      */
     public void writeSensorData(String deviceCode, String projectId,
                                 String sensorType, double value, String unit) {
-        // 通过 InfluxDB WriteApi 写入时序数据
+        validateSafeInput(deviceCode, "deviceCode");
+
         var point = com.influxdb.client.domain.Point
                 .measurement("device_sensor_data")
                 .addTag("device_code", deviceCode)
@@ -109,6 +118,17 @@ public class DeviceSensorDataService {
             writeApi.writePoint(point);
         } catch (Exception e) {
             log.error("写入传感器数据失败 deviceCode={}, sensorType={}", deviceCode, sensorType, e);
+        }
+    }
+
+    /**
+     * 校验输入: 只允许字母数字、连字符、下划线、冒号、点
+     * 防止 Flux 注入
+     */
+    private void validateSafeInput(String input, String fieldName) {
+        if (input == null || !input.matches("^[a-zA-Z0-9_\\-.:]+$")) {
+            throw new IllegalArgumentException(
+                    String.format("非法 %s 参数: %s", fieldName, input));
         }
     }
 }

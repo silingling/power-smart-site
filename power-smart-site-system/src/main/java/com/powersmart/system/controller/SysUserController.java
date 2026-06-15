@@ -25,9 +25,4 @@ public class SysUserController {
                 .eq(projectId != null, SysUser::getProjectId, projectId)
                 .list());
     }
-
-    @PostMapping("/login")
-    public Result<SysUser> login(@RequestParam String username, @RequestParam String password) {
-        return Result.ok(userService.login(username, password));
-    }
 }

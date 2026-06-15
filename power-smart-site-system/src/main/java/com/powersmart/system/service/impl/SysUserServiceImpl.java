@@ -16,7 +16,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public SysUser login(String username, String password) {
         SysUser user = getOne(new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
         if (user == null) throw new BusinessException("用户不存在");
-        String hashed = DigestUtil.md5Hex(password + user.getPassword().substring(0, 8));
+
+        // 密码校验：md5(raw_password) compare with stored hash
+        String hashed = DigestUtil.md5Hex(password);
         if (!user.getPassword().equals(hashed)) throw new BusinessException("密码错误");
         return user;
     }

@@ -423,6 +423,10 @@ CREATE TABLE sys_dept (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB COMMENT='部门组织架构';
 
+-- 初始化管理员账号（密码: admin / 123456）
+INSERT INTO sys_user (username, password, real_name, phone, role_ids, status) VALUES
+('admin', 'e10adc3949ba59abbe56e057f20f883e', '系统管理员', '13800000000', '1,2', 1);
+
 -- 初始化部门数据
 INSERT INTO sys_dept (parent_id, dept_name, dept_type, sort_order) VALUES
 (0, '山西同业电力', 'company', 1),

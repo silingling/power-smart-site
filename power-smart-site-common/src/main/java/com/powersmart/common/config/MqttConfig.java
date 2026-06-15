@@ -10,9 +10,11 @@ import org.springframework.integration.mqtt.core.MqttPahoClientFactory;
 
 /**
  * MQTT 物联网接入配置
- * <p>
- * 用于接收工地现场 IoT 设备（UWB基站/智能安全帽/传感器）上报的数据。
- * 设备通过 MQTT 协议上报 JSON 数据，由 MessageConsumer 处理。
+ *
+ * 安全说明：
+ * - brokerUrl / username / password 从配置中心(Nacos)读取
+ * - 本地开发默认值不可用于生产
+ * - 生产环境通过 NACOS 配置或环境变量 MQTT_PASSWORD 覆盖
  */
 @Data
 @Configuration
@@ -22,7 +24,7 @@ public class MqttConfig {
     private String brokerUrl = "tcp://127.0.0.1:1883";
     private String clientId = "power-smart-site";
     private String username = "powersmart";
-    private String password = "powersmart123";
+    private String password = "${MQTT_PASSWORD:powersmart123}";
     private String[] inboundTopics = {"device/+/data", "location/+/update", "alarm/+/trigger"};
 
     @Bean
