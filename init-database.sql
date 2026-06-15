@@ -1002,3 +1002,145 @@ SELECT '围栏告警', 'fenceAlertEvent', 'device', id, 91, 0, NOW()
 FROM sys_permission WHERE permission_code = 'device_root' AND NOT EXISTS (
     SELECT 1 FROM sys_permission WHERE permission_code = 'fenceAlertEvent'
 );
+
+-- ========== Phase 5D：特种作业票 ==========
+
+CREATE TABLE IF NOT EXISTS special_work_permit (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    permit_no VARCHAR(50) NOT NULL COMMENT '票号: SP-YYYY-MM-DD-NNN',
+    permit_type VARCHAR(30) NOT NULL COMMENT '类型: hot_work/height_work/confined_space/temp_electric/lifting/excavation/road_blockage',
+    title VARCHAR(200) NOT NULL COMMENT '作业票标题',
+    work_location VARCHAR(500) COMMENT '作业地点',
+    work_content TEXT COMMENT '作业内容',
+    risk_analysis TEXT COMMENT '风险辨识',
+    safety_measures TEXT COMMENT '安全措施JSON [{name,done}]',
+    gas_test_result TEXT COMMENT '气体检测结果JSON',
+    expected_start_time DATETIME COMMENT '预计开始时间',
+    expected_end_time DATETIME COMMENT '预计结束时间',
+    work_team_name VARCHAR(100) COMMENT '作业班组',
+    worker_count INT DEFAULT 1 COMMENT '作业人数',
+    applicant_id BIGINT COMMENT '申请人ID',
+    applicant_name VARCHAR(50) COMMENT '申请人姓名',
+    applicant_dept VARCHAR(100) COMMENT '申请部门',
+    监护人_id BIGINT COMMENT '监护人ID',
+    监护人_name VARCHAR(50) COMMENT '监护人姓名',
+    负责人_id BIGINT COMMENT '作业负责人ID',
+    负责人_name VARCHAR(50) COMMENT '作业负责人姓名',
+    status VARCHAR(20) DEFAULT 'draft' COMMENT '状态: draft/submitted/safety_review/approved/active/completed/closed/rejected/cancelled',
+    current_node VARCHAR(50) COMMENT '当前审批节点',
+    reject_reason TEXT COMMENT '驳回/作废原因',
+    issuer_id BIGINT COMMENT '签发人ID',
+    issuer_name VARCHAR(50) COMMENT '签发人姓名',
+    issue_time DATETIME COMMENT '签发时间',
+    actual_end_time DATETIME COMMENT '实际结束时间',
+    completion_note TEXT COMMENT '完工说明',
+    closer_id BIGINT COMMENT '完工确认人ID',
+    closer_name VARCHAR(50) COMMENT '完工确认人姓名',
+    close_time DATETIME COMMENT '归档时间',
+    extended_count INT DEFAULT 0 COMMENT '延期次数',
+    new_end_time DATETIME COMMENT '延期后的结束时间',
+    extension_reason TEXT COMMENT '延期原因',
+    applicant_signature TEXT COMMENT '申请人签名(base64)',
+    issuer_signature TEXT COMMENT '签发人签名',
+    closer_signature TEXT COMMENT '完工确认人签名',
+    attachment_json TEXT COMMENT '附件JSON数组',
+    remark TEXT COMMENT '备注',
+    create_by VARCHAR(50) COMMENT '创建人',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_permit_no (permit_no),
+    KEY idx_project (project_id),
+    KEY idx_type (permit_type),
+    KEY idx_status (status),
+    KEY idx_applicant (applicant_id),
+    KEY idx_start_time (expected_start_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='特种作业票';
+
+CREATE TABLE IF NOT EXISTS permit_check_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    permit_type VARCHAR(30) NOT NULL COMMENT '作业票类型: hot_work/height_work/...',
+    item_name VARCHAR(200) NOT NULL COMMENT '检查项名称',
+    item_category VARCHAR(30) DEFAULT 'measure' COMMENT '分类: person/equipment/environment/measure',
+    required TINYINT DEFAULT 1 COMMENT '1-必选 0-可选',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    enabled TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_type (permit_type),
+    KEY idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='作业票检查项模板';
+
+-- 默认检查项种子数据（动火作业）
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('hot_work', '作业人员持有效特种作业操作证', 'person', 1, 1, 1),
+('hot_work', '现场配备灭火器（不少于2具）', 'equipment', 1, 2, 1),
+('hot_work', '动火点周围10m内无易燃物', 'environment', 1, 3, 1),
+('hot_work', '氧气瓶与乙炔瓶间距≥5m', 'equipment', 1, 4, 1),
+('hot_work', '配备防火毯/接火盆', 'equipment', 1, 5, 1),
+('hot_work', '监护人到位', 'person', 1, 6, 1),
+('hot_work', '气体检测合格（可燃气体≤20%LEL）', 'measure', 1, 7, 1),
+('hot_work', '作业人员佩戴防护用品（护目镜/手套）', 'person', 1, 8, 1);
+
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('height_work', '作业人员持有效高处作业证', 'person', 1, 1, 1),
+('height_work', '安全带/安全绳完好有效', 'equipment', 1, 2, 1),
+('height_work', '作业面下方设置警戒区', 'environment', 1, 3, 1),
+('height_work', '脚手架/梯子搭设验收合格', 'equipment', 1, 4, 1),
+('height_work', '佩戴安全帽', 'person', 1, 5, 1),
+('height_work', '风速≤5级（禁止高处作业）', 'environment', 1, 6, 1),
+('height_work', '工具采取防坠落措施', 'measure', 1, 7, 1),
+('height_work', '监护人到位', 'person', 1, 8, 1);
+
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('confined_space', '作业人员持有限空间作业证', 'person', 1, 1, 1),
+('confined_space', '气体检测合格（氧含量19.5%-23.5%）', 'measure', 1, 2, 1),
+('confined_space', '强制通风设备就位', 'equipment', 1, 3, 1),
+('confined_space', '救援三脚架/安全绳就位', 'equipment', 1, 4, 1),
+('confined_space', '连续气体监测', 'measure', 1, 5, 1),
+('confined_space', '监护人到位（全程）', 'person', 1, 6, 1),
+('confined_space', '进出口畅通无阻塞', 'environment', 1, 7, 1),
+('confined_space', '照明电压≤12V（潮湿环境）', 'equipment', 1, 8, 1);
+
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('temp_electric', '电工持有效特种作业操作证', 'person', 1, 1, 1),
+('temp_electric', '配电箱符合TN-S系统要求', 'equipment', 1, 2, 1),
+('temp_electric', '漏电保护器测试合格', 'measure', 1, 3, 1),
+('temp_electric', '电缆无破损/接头规范', 'equipment', 1, 4, 1),
+('temp_electric', '接地/接零保护到位', 'measure', 1, 5, 1),
+('temp_electric', '架空/埋地敷设符合规范', 'environment', 1, 6, 1),
+('temp_electric', '夜间作业照明充足', 'environment', 1, 7, 1);
+
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('lifting', '起重设备定期检验合格', 'equipment', 1, 1, 1),
+('lifting', '吊索具完好（无断丝/磨损）', 'equipment', 1, 2, 1),
+('lifting', '起重指挥人员持证上岗', 'person', 1, 3, 1),
+('lifting', '吊装区域设置警戒线', 'environment', 1, 4, 1),
+('lifting', '天气条件满足（风速≤6级）', 'environment', 1, 5, 1),
+('lifting', '支腿/配重就位', 'measure', 1, 6, 1),
+('lifting', '试吊确认', 'measure', 1, 7, 1),
+('lifting', '信号指挥方案明确', 'person', 1, 8, 1);
+
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('excavation', '地下管线已探明（管线会签）', 'measure', 1, 1, 1),
+('excavation', '挖掘深度＞1.5m设支护', 'measure', 1, 2, 1),
+('excavation', '基坑边设置安全护栏', 'environment', 1, 3, 1),
+('excavation', '出土堆放距离坑边≥1m', 'environment', 1, 4, 1),
+('excavation', '夜间作业照明及警示灯', 'environment', 1, 5, 1),
+('excavation', '排水措施到位', 'measure', 1, 6, 1);
+
+INSERT IGNORE INTO permit_check_item (permit_type, item_name, item_category, required, sort_order, enabled) VALUES
+('road_blockage', '交通疏导方案审批', 'measure', 1, 1, 1),
+('road_blockage', '警示标志/导向标志就位', 'equipment', 1, 2, 1),
+('road_blockage', '夜间反光锥/警示灯', 'equipment', 1, 3, 1),
+('road_blockage', '围挡/隔离设施到位', 'environment', 1, 4, 1),
+('road_blockage', '应急通道畅通', 'environment', 1, 5, 1),
+('road_blockage', '交通协管员到位', 'person', 1, 6, 1);
+
+-- 菜单条目
+INSERT IGNORE INTO sys_menu (parent_id, name, permission_key, path, icon, menu_type, sort_order)
+SELECT id, '特种作业票', 'safety:permits', '/safety/permits', 'file-protect', 2, 3
+FROM sys_menu WHERE name = '安全质量' AND NOT EXISTS (
+    SELECT 1 FROM sys_menu WHERE permission_key = 'safety:permits'
+);

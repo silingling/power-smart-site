@@ -134,6 +134,12 @@ spring:
           predicates: [Path=/build/safetyMaterialChangelog/**]
           filters: [StripPrefix=0]
 
+        # 特种作业票
+        - id: special-work-permit
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/specialWorkPermit/**]
+          filters: [StripPrefix=0]
+
         # 项目信息
         - id: project-info
           uri: lb://power-smart-system
