@@ -250,6 +250,12 @@ spring:
           predicates: [Path=/adminMenu/**,/adminRole/**]
           filters: [StripPrefix=0]
 
+        # PMS数据同步
+        - id: pms-sync
+          uri: lb://power-smart-system
+          predicates: [Path=/build/pmsSync/**]
+          filters: [StripPrefix=0]
+
         # ========== 内部 REST API（兼容） ==========
         - id: worker-internal
           uri: lb://power-smart-worker

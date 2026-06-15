@@ -1144,3 +1144,67 @@ SELECT id, '特种作业票', 'safety:permits', '/safety/permits', 'file-protect
 FROM sys_menu WHERE name = '安全质量' AND NOT EXISTS (
     SELECT 1 FROM sys_menu WHERE permission_key = 'safety:permits'
 );
+
+-- ========== Phase 5E：PMS 数据同步接口 ==========
+
+CREATE TABLE IF NOT EXISTS pms_sync_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL COMMENT '配置键',
+    config_value TEXT COMMENT '配置值',
+    description VARCHAR(500) COMMENT '配置说明',
+    enabled TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_config_key (config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='PMS同步配置';
+
+CREATE TABLE IF NOT EXISTS pms_sync_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    entity_type VARCHAR(30) NOT NULL COMMENT '同步实体类型',
+    sync_direction VARCHAR(10) NOT NULL COMMENT '方向: pull/push',
+    action VARCHAR(30) NOT NULL COMMENT '动作: sync_all/sync_by_id/sync_by_time',
+    entity_ids TEXT COMMENT '关联本地ID(JSON数组)',
+    pms_ids TEXT COMMENT '关联PMS ID(JSON数组)',
+    total_count INT DEFAULT 0 COMMENT '总记录数',
+    success_count INT DEFAULT 0 COMMENT '成功数',
+    fail_count INT DEFAULT 0 COMMENT '失败数',
+    status VARCHAR(20) DEFAULT 'running' COMMENT '状态: running/success/partial/failed',
+    error_message TEXT COMMENT '错误消息',
+    result_json TEXT COMMENT '同步结果详情JSON',
+    duration_ms BIGINT DEFAULT 0 COMMENT '耗时毫秒',
+    triggered_by VARCHAR(20) DEFAULT 'manual' COMMENT '触发方式: manual/scheduled',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_entity (entity_type),
+    KEY idx_status (status),
+    KEY idx_time (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='PMS同步日志';
+
+CREATE TABLE IF NOT EXISTS pms_id_mapping (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    entity_type VARCHAR(30) NOT NULL COMMENT '实体类型',
+    local_id VARCHAR(100) NOT NULL COMMENT '本地系统ID',
+    pms_id VARCHAR(100) NOT NULL COMMENT 'PMS系统ID',
+    last_sync_time DATETIME COMMENT '最近同步时间',
+    sync_status VARCHAR(20) DEFAULT 'synced' COMMENT '同步状态: synced/pending/conflict',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_mapping (entity_type, local_id),
+    KEY idx_pms (entity_type, pms_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='PMS ID映射';
+
+-- 默认同步配置种子数据
+INSERT IGNORE INTO pms_sync_config (config_key, config_value, description, enabled) VALUES
+('pms_api_url', 'http://pms.example.com/api', 'PMS系统API地址', 1),
+('pms_app_id', '', 'PMS应用ID', 1),
+('pms_app_secret', '', 'PMS应用密钥', 1),
+('pms_sync_interval_minutes', '60', '自动同步间隔(分钟)', 1),
+('pms_sync_enabled_entities', 'project,worker,hazard,progress,device,permit,fence', '启用的同步实体类型', 1),
+('pms_timeout_seconds', '30', 'HTTP请求超时秒数', 1),
+('pms_project_code_prefix', 'PS-', '项目编码前缀', 1);
+
+-- 菜单条目
+INSERT IGNORE INTO sys_menu (parent_id, name, permission_key, path, icon, menu_type, sort_order)
+SELECT id, 'PMS同步', 'system:pmsSync', '/system/pmsSync', 'sync', 2, 10
+FROM sys_menu WHERE name = '系统管理' AND NOT EXISTS (
+    SELECT 1 FROM sys_menu WHERE permission_key = 'system:pmsSync'
+);
