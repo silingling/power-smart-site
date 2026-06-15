@@ -4,6 +4,8 @@ const config = require('../config')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const packageConfig = require('../package.json')
 
+const themePath = path.resolve(__dirname, '../src/styles/xr-theme.scss')
+
 exports.assetsPath = function (_path) {
   const assetsSubDirectory =
     process.env.NODE_ENV === 'production' ?
@@ -59,7 +61,8 @@ exports.cssLoaders = function (options) {
       implementation: require('sass')
     }),
     scss: generateLoaders('sass', {
-      implementation: require('sass')
+      implementation: require('sass'),
+      additionalData: "@import '" + themePath + "';\n"
     }),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
