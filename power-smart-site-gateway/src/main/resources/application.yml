@@ -114,6 +114,24 @@ spring:
           predicates: [Path=/build/dashboard/**]
           filters: [StripPrefix=0]
 
+        # 文件导出
+        - id: excel-export
+          uri: lb://power-smart-system
+          predicates: [Path=/build/excelImpModelExport/**,/build/ApiFile/**]
+          filters: [StripPrefix=0]
+
+        # 考勤导入
+        - id: attendance-import
+          uri: lb://power-smart-worker
+          predicates: [Path=/build/bLabourAttendanceRecord/**]
+          filters: [StripPrefix=0]
+
+        # 系统菜单/角色
+        - id: admin-menu-role
+          uri: lb://power-smart-system
+          predicates: [Path=/adminMenu/**,/adminRole/**]
+          filters: [StripPrefix=0]
+
         # ========== 内部 REST API（兼容） ==========
         - id: worker-internal
           uri: lb://power-smart-worker

@@ -123,8 +123,8 @@ public class ProjectInfoController {
         return queryPageList(params);
     }
 
-    @PostMapping("/sync")
-    public Result<Void> sync(@RequestBody(required = false) Map<String, Object> params) {
+    @GetMapping("/sync")
+    public Result<Void> sync() {
         // 数据同步接口 - 按需实现
         return Result.ok();
     }

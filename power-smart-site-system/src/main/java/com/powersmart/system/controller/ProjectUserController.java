@@ -37,4 +37,24 @@ public class ProjectUserController {
     public Result<PageResult<Map<String, Object>>> queryPageList(@RequestBody(required = false) Map<String, Object> params) {
         return Result.ok(PageResult.of(new ArrayList<>(), 0, 1, 20));
     }
+
+    @PostMapping("/userProList")
+    public Result<List<Map<String, Object>>> userProList() {
+        return Result.ok(new ArrayList<>());
+    }
+
+    @PostMapping("/queryProPageList")
+    public Result<PageResult<Map<String, Object>>> queryProPageList(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(PageResult.of(new ArrayList<>(), 0, 1, 20));
+    }
+
+    @PostMapping("/queryProListAll")
+    public Result<List<Long>> queryProListAll(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(new ArrayList<>());
+    }
+
+    @PostMapping("/saveBindProjects")
+    public Result<Void> saveBindProjects(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
 }

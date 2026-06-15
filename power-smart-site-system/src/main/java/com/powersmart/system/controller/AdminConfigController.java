@@ -19,6 +19,11 @@ public class AdminConfigController {
 
     private final SysConfigMapper mapper;
 
+    @PostMapping("/adminConfig/queryFirstConfigByName")
+    public Result<SysConfig> queryFirstConfigByName(@RequestBody Map<String, Object> params) {
+        return queryConfigByName(params);
+    }
+
     @PostMapping("/adminConfig/queryConfigByName")
     public Result<SysConfig> queryConfigByName(@RequestBody Map<String, Object> params) {
         String configName = params != null && params.get("configName") != null

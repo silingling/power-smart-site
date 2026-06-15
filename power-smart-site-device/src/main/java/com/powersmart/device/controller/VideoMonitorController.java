@@ -37,7 +37,6 @@ public class VideoMonitorController {
     /**
      * 按设备位置查询摄像头列表
      */
-    @PostMapping("/videoMonitor/queryByParentId/{parentId}")
     @GetMapping("/videoMonitor/queryByParentId/{parentId}")
     public Result<List<VideoMonitor>> queryByParentId(@PathVariable Long parentId) {
         LambdaQueryWrapper<VideoMonitor> wrapper = new LambdaQueryWrapper<VideoMonitor>()
@@ -62,5 +61,10 @@ public class VideoMonitorController {
     public Result<Void> delete(@PathVariable Long id) {
         mapper.deleteById(id);
         return Result.ok();
+    }
+
+    @PostMapping("/videoMonitor/removeById/{id}")
+    public Result<Void> removeById(@PathVariable Long id) {
+        return delete(id);
     }
 }

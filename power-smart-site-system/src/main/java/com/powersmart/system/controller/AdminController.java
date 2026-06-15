@@ -169,4 +169,88 @@ public class AdminController {
             return defaultValue;
         }
     }
+
+    // ===== 部门管理 =====
+    @PostMapping("/adminDept/deleteDept/{id}")
+    public Result<Void> deleteDept(@PathVariable Long id) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminDept/setDept")
+    public Result<Void> setDept(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminDept/addDept")
+    public Result<Void> addDept(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    // ===== 用户管理 =====
+    @PostMapping("/adminUser/setUser")
+    public Result<Void> setUser(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminUser/addUser")
+    public Result<Void> addUser(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @GetMapping("/adminUser/delUser/{userId}")
+    public Result<Void> delUser(@PathVariable String userId) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminUser/resetPassword")
+    public Result<Void> resetPassword(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminUser/usernameEdit")
+    public Result<Void> usernameEdit(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminUser/usernameEditByManager")
+    public Result<Void> usernameEditByManager(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminUser/setUserStatus")
+    public Result<Void> setUserStatus(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
+
+    @PostMapping("/adminUser/excelImport")
+    public Result<Map<String, Object>> excelImport(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(Map.of("count", 0));
+    }
+
+    @PostMapping("/adminUser/downExcel")
+    public Result<Map<String, Object>> downExcel(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(Map.of("url", ""));
+    }
+
+    // ===== 角色管理 =====
+    @PostMapping("/adminRole/getAllRoleList")
+    public Result<List<Map<String, Object>>> getAllRoleList(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(new ArrayList<>());
+    }
+
+    // ===== 菜单管理 =====
+    @PostMapping("/adminMenu/queryHeaderMenuList")
+    public Result<List<Map<String, Object>>> queryHeaderMenuList(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(new ArrayList<>());
+    }
+
+    @PostMapping("/adminMenu/queryAllMenuList")
+    public Result<List<Map<String, Object>>> queryAllMenuList(@RequestBody(required = false) Map<String, Object> params) {
+        return Result.ok(new ArrayList<>());
+    }
+
+    @PostMapping("/adminConfig/setHeaderModelSort")
+    public Result<Void> setHeaderModelSort(@RequestBody Map<String, Object> params) {
+        return Result.ok();
+    }
 }
