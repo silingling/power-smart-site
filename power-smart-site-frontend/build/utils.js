@@ -23,12 +23,9 @@ exports.cssLoaders = function (options) {
     }
   }
 
-  // generate loader string to be used with extract text plugin
   function generateLoaders(loader, loaderOptions) {
     const loaders = []
 
-    // Extract CSS when that option is specified
-    // (which is the case during production build)
     if (options.extract) {
       loaders.push({
         loader: MiniCssExtractPlugin.loader,
@@ -54,23 +51,6 @@ exports.cssLoaders = function (options) {
     return loaders
   }
 
-  // 创建包含 sass-resources-loader 的 scss 加载链
-  function scssLoaders() {
-    const baseLoaders = generateLoaders('sass', {
-      implementation: require('sass')
-    })
-    // sass-resources-loader 必须放在 sass-loader 之后（webpack 倒序执行）
-    // 这样它会先运行，注入 xr-theme 变量后再交给 sass 编译
-    baseLoaders.push({
-      loader: 'sass-resources-loader',
-      options: {
-        resources: path.resolve(__dirname, '../src/styles/xr-theme.scss')
-      }
-    })
-    return baseLoaders
-  }
-
-  // https://vue-loader.vuejs.org/en/configurations/extract-css.html
   return {
     css: generateLoaders(),
     less: generateLoaders('less'),
@@ -78,13 +58,14 @@ exports.cssLoaders = function (options) {
       indentedSyntax: true,
       implementation: require('sass')
     }),
-    scss: scssLoaders(),
+    scss: generateLoaders('sass', {
+      implementation: require('sass')
+    }),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
   }
 }
 
-// Generate loaders for standalone style files (outside of .vue)
 exports.styleLoaders = function (options) {
   const output = []
   const loaders = exports.cssLoaders(options)
@@ -102,13 +83,10 @@ exports.styleLoaders = function (options) {
 
 exports.createNotifierCallback = () => {
   const notifier = require('node-notifier')
-
   return (severity, errors) => {
     if (severity !== 'error') return
-
     const error = errors[0]
     const filename = error.file && error.file.split('!').pop()
-
     notifier.notify({
       title: packageConfig.name,
       message: severity + ': ' + error.name,
