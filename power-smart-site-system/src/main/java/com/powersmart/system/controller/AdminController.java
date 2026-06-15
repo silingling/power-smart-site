@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.powersmart.common.annotation.OperateLog;
 import com.powersmart.common.auth.JwtUtil;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
@@ -38,6 +39,7 @@ public class AdminController {
     // ==================== 登录 ====================
 
     @PostMapping("/login")
+    @OperateLog(module = "系统管理", action = "login", description = "用户登录", recordParams = false)
     public Result<Map<String, Object>> login(@RequestBody Map<String, String> params) {
         String username = params.get("username");
         String password = params.get("password");
@@ -83,6 +85,7 @@ public class AdminController {
     }
 
     @PostMapping("/logout")
+    @OperateLog(module = "系统管理", action = "logout", description = "用户登出")
     public Result<Void> logout(@RequestHeader(value = "Admin-Token", required = false) String token) {
         if (StrUtil.isNotBlank(token)) {
             RedisUtil.addToBlacklist(token);

@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.powersmart.common.annotation.OperateLog;
 import com.powersmart.common.auth.SecurityContext;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
@@ -35,6 +36,7 @@ public class HazardBuildController {
 
     /** 上报隐患 */
     @PostMapping("/build/hazardReport/addHazardReport")
+    @OperateLog(module = "隐患管理", action = "insert", description = "上报隐患", recordResult = false)
     public Result<Map<String, Object>> addHazardReport(@RequestBody Map<String, Object> params) {
         HazardReport report = new HazardReport();
         report.setProjectId(safeLong(params.get("projectId")));
@@ -99,6 +101,7 @@ public class HazardBuildController {
 
     /** 更新隐患 */
     @PostMapping("/build/hazardReport/setHazardReport")
+    @OperateLog(module = "隐患管理", action = "update", description = "修改隐患")
     public Result<Void> setHazardReport(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         HazardReport report = hazardService.getById(id);
@@ -113,6 +116,7 @@ public class HazardBuildController {
 
     /** 删除隐患 */
     @PostMapping("/build/hazardReport/delHazardReport/{id}")
+    @OperateLog(module = "隐患管理", action = "delete", description = "删除隐患 #{{id}}", targetId = "{{id}}")
     public Result<Void> delHazardReport(@PathVariable Long id) {
         hazardService.removeById(id);
         return Result.ok();
@@ -122,6 +126,7 @@ public class HazardBuildController {
 
     /** 创建整改工单 */
     @PostMapping("/build/hazardWorkOrder/addWorkOrder")
+    @OperateLog(module = "隐患管理", action = "insert", description = "创建整改工单", recordResult = false)
     public Result<Map<String, Object>> addWorkOrder(@RequestBody Map<String, Object> params) {
         Long hazardId = safeLong(params.get("hazardId"));
         Long assigneeId = safeLong(params.get("assigneeId"));
@@ -169,6 +174,7 @@ public class HazardBuildController {
 
     /** 提交整改 */
     @PostMapping("/build/hazardWorkOrder/submitRectification")
+    @OperateLog(module = "隐患管理", action = "update", description = "提交整改")
     public Result<Void> submitRectification(@RequestBody Map<String, Object> params) {
         Long orderId = safeLong(params.get("orderId"));
         String note = params.getOrDefault("note", "").toString();
@@ -179,6 +185,7 @@ public class HazardBuildController {
 
     /** 验收工单 */
     @PostMapping("/build/hazardWorkOrder/verifyOrder")
+    @OperateLog(module = "隐患管理", action = "verify", description = "验收工单")
     public Result<Void> verifyOrder(@RequestBody Map<String, Object> params) {
         Long orderId = safeLong(params.get("orderId"));
         boolean passed = "3".equals(String.valueOf(params.getOrDefault("status", "3")));

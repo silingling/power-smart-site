@@ -1179,6 +1179,47 @@ CREATE TABLE IF NOT EXISTS pms_sync_log (
     KEY idx_time (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='PMS同步日志';
 
+-- =============================================================
+-- Phase 5F: 审计日志
+-- =============================================================
+CREATE TABLE IF NOT EXISTS operate_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    module VARCHAR(50) NOT NULL COMMENT '功能模块',
+    action VARCHAR(50) NOT NULL COMMENT '操作类型(insert/update/delete/export/login/...)',
+    description VARCHAR(500) COMMENT '操作描述',
+    operator_id BIGINT COMMENT '操作人ID',
+    operator_name VARCHAR(50) COMMENT '操作人姓名',
+    target_type VARCHAR(50) COMMENT '操作对象类型',
+    target_id VARCHAR(100) COMMENT '操作对象ID',
+    request_params TEXT COMMENT '请求参数(JSON)',
+    result TEXT COMMENT '执行结果(JSON)',
+    ip VARCHAR(50) COMMENT '请求IP',
+    user_agent VARCHAR(500) COMMENT 'UA',
+    duration_ms INT DEFAULT 0 COMMENT '执行耗时(ms)',
+    status TINYINT DEFAULT 1 COMMENT '1-成功 0-失败',
+    error_msg VARCHAR(1000) COMMENT '错误信息',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_module (module),
+    INDEX idx_action (action),
+    INDEX idx_operator (operator_id),
+    INDEX idx_target (target_type, target_id),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作审计日志';
+
+-- =============================================================
+-- Phase 5F: 仪表盘配置
+-- =============================================================
+CREATE TABLE IF NOT EXISTS dashboard_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '项目ID',
+    config_key VARCHAR(100) NOT NULL COMMENT '配置键',
+    config_value TEXT COMMENT '配置值(JSON)',
+    enabled TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_project_config (project_id, config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='仪表盘配置';
+
 CREATE TABLE IF NOT EXISTS pms_id_mapping (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     entity_type VARCHAR(30) NOT NULL COMMENT '实体类型',

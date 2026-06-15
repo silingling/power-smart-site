@@ -2,6 +2,7 @@ package com.powersmart.system.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.powersmart.common.annotation.OperateLog;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
 import com.powersmart.system.entity.PmsIdMapping;
@@ -29,6 +30,7 @@ public class PmsSyncController {
 
     /** 触发指定实体类型的同步 */
     @PostMapping("/build/pmsSync/triggerSync")
+    @OperateLog(module = "PMS数据同步", action = "sync", description = "手动触发单实体同步", recordResult = false)
     public Result<Map<String, Object>> triggerSync(@RequestBody Map<String, Object> params) {
         String entityType = params.containsKey("entityType") ? params.get("entityType").toString() : null;
         String syncDirection = params.containsKey("syncDirection") ? params.get("syncDirection").toString() : "pull";
@@ -57,6 +59,7 @@ public class PmsSyncController {
 
     /** 批量触发同步 */
     @PostMapping("/build/pmsSync/triggerBatchSync")
+    @OperateLog(module = "PMS数据同步", action = "sync", description = "手动触发全量同步", recordResult = false)
     public Result<Map<String, Object>> triggerBatchSync(@RequestBody Map<String, Object> params) {
         String entityTypesStr = params.containsKey("entityTypes") ? params.get("entityTypes").toString() : "";
         String syncDirection = params.containsKey("syncDirection") ? params.get("syncDirection").toString() : "pull";
@@ -159,6 +162,7 @@ public class PmsSyncController {
 
     /** 更新同步配置 */
     @PostMapping("/build/pmsSync/setSyncConfig")
+    @OperateLog(module = "PMS数据同步", action = "update", description = "更新同步配置")
     public Result<Void> setConfig(@RequestBody Map<String, Object> params) {
         Long id = params.containsKey("id") ? Long.parseLong(params.get("id").toString()) : null;
         String configValue = params.containsKey("configValue") ? params.get("configValue").toString() : null;

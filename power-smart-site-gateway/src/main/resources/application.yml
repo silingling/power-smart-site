@@ -138,6 +138,12 @@ spring:
         - id: special-work-permit
           uri: lb://power-smart-hazard
           predicates: [Path=/build/specialWorkPermit/**]
+
+        # 审计日志
+        - id: operate-log
+          uri: lb://power-smart-system
+          predicates: [Path=/build/operateLog/**]
+          filters: [StripPrefix=0]
           filters: [StripPrefix=0]
 
         # 项目信息

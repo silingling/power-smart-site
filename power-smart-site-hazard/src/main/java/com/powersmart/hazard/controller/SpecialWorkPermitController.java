@@ -1,6 +1,7 @@
 package com.powersmart.hazard.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.powersmart.common.annotation.OperateLog;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
 import com.powersmart.hazard.entity.PermitCheckItem;
@@ -45,6 +46,7 @@ public class SpecialWorkPermitController {
 
     /** 新增作业票（草稿） */
     @PostMapping("/build/specialWorkPermit/addSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "insert", description = "新增作业票")
     public Result<Map<String, Object>> add(@RequestBody Map<String, Object> params) {
         SpecialWorkPermit wp = permitService.buildFromParams(null, params);
         permitService.add(wp);
@@ -56,6 +58,7 @@ public class SpecialWorkPermitController {
 
     /** 更新作业票 */
     @PostMapping("/build/specialWorkPermit/setSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "update", description = "修改作业票")
     public Result<Void> set(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         if (id == null) return Result.fail("id 不能为空");
@@ -67,6 +70,7 @@ public class SpecialWorkPermitController {
 
     /** 删除作业票 */
     @PostMapping("/build/specialWorkPermit/delSpecialWorkPermit/{id}")
+    @OperateLog(module = "特种作业票", action = "delete", description = "删除作业票 #{{id}}", targetId = "{{id}}")
     public Result<Void> delete(@PathVariable Long id) {
         permitService.delete(id);
         return Result.ok();
@@ -76,6 +80,7 @@ public class SpecialWorkPermitController {
 
     /** 提交审批: draft → submitted */
     @PostMapping("/build/specialWorkPermit/submitSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "submit", description = "提交作业票审批")
     public Result<Void> submit(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         if (id == null) return Result.fail("id 不能为空");
@@ -84,6 +89,7 @@ public class SpecialWorkPermitController {
 
     /** 审核通过/签发: submitted → approved */
     @PostMapping("/build/specialWorkPermit/approveSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "approve", description = "审核通过作业票")
     public Result<Void> approve(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String issuerName = params.containsKey("issuerName") ? params.get("issuerName").toString() : null;
@@ -94,6 +100,7 @@ public class SpecialWorkPermitController {
 
     /** 驳回: submitted → rejected */
     @PostMapping("/build/specialWorkPermit/rejectSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "reject", description = "驳回作业票")
     public Result<Void> reject(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String reason = params.containsKey("reason") ? params.get("reason").toString() : "";
@@ -103,6 +110,7 @@ public class SpecialWorkPermitController {
 
     /** 开始作业: approved → active */
     @PostMapping("/build/specialWorkPermit/startSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "start", description = "开始作业")
     public Result<Void> startWork(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         if (id == null) return Result.fail("id 不能为空");
@@ -111,6 +119,7 @@ public class SpecialWorkPermitController {
 
     /** 完工: active → completed */
     @PostMapping("/build/specialWorkPermit/completeSpecialWorkPermit")
+    @OperateLog(module = "特种作业票", action = "complete", description = "完成作业")
     public Result<Void> complete(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String note = params.containsKey("completionNote") ? params.get("completionNote").toString() : null;
