@@ -72,10 +72,10 @@ exports.cssLoaders = function (options) {
     less: generateLoaders('less'),
     sass: generateLoaders('sass', {
       indentedSyntax: true,
-      implementation: require('sass')
+      implementation: require('sass-embedded')
     }),
     scss: generateLoaders('sass', {
-      implementation: require('sass'),
+      implementation: require('sass-embedded'),
       sassOptions: {
         quietDeps: true,
         silenceDeprecations: ['import', 'legacy-js-api']
