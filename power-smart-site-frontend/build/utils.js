@@ -72,15 +72,18 @@ exports.cssLoaders = function (options) {
     less: generateLoaders('less'),
     sass: generateLoaders('sass', {
       indentedSyntax: true,
-      implementation: require('sass-embedded')
+      implementation: require('sass')
     }),
     scss: generateLoaders('sass', {
-      implementation: require('sass-embedded'),
+      implementation: require('sass'),
       sassOptions: {
-        quietDeps: true,
-        silenceDeprecations: ['import', 'legacy-js-api']
-      },
-      additionalData: "@import '" + path.resolve(__dirname, '../src/styles/xr-theme.scss') + "';\n"
+        quietDeps: true
+      }
+    }).concat({
+      loader: 'style-resources-loader',
+      options: {
+        patterns: [path.resolve(__dirname, '../src/styles/xr-theme.scss')]
+      }
     }),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
