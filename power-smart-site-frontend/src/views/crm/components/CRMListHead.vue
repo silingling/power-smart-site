@@ -209,6 +209,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .c-container {
   height: 60px;
   position: relative;

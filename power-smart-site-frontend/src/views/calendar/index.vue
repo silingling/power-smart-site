@@ -892,6 +892,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 @import './style/color.scss';
 @import './style/fullCalendar.scss';
 .calendar-box {

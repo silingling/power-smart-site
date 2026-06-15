@@ -1323,6 +1323,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
   @import '@/views/login/index.scss';
 
   .verify-picture {

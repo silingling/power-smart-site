@@ -161,6 +161,8 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .system-customer {
   height: calc(100% - 10px);
 }

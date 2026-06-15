@@ -294,6 +294,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .message-header {
   margin-left: 28px;
   height: 60px;

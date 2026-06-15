@@ -360,6 +360,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 .add-goal {
   padding: 15px 0;
   &__handle {

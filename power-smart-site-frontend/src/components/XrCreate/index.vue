@@ -122,6 +122,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
   .xr-create {
     position: relative;
     height: 100%;

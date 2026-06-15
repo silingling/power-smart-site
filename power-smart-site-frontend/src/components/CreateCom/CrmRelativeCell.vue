@@ -142,6 +142,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .user-container {
   min-height: 34px;
   position: relative;

@@ -268,6 +268,8 @@
   }
 </script>
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
   /* 选择员工 */
   .user-img {
     margin-right: 8px;

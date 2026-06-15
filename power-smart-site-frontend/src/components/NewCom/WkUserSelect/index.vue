@@ -339,6 +339,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .wk-user-select {
   height: 34px;
   // display: inline-block;

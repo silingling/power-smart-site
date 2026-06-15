@@ -530,6 +530,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../styles/xr-theme.scss";
 @import '@/styles/mixin.scss';
 .main {
   padding: 0px 15px 0;

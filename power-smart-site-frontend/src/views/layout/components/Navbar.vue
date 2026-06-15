@@ -611,6 +611,8 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .navbar {
   height: 60px;
   min-height: 60px;

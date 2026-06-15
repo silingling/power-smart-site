@@ -190,6 +190,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../../styles/xr-theme.scss";
+
 .t-section {
   position: relative;
   padding: 10px 17px;

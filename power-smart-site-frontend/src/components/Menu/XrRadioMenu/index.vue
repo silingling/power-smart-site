@@ -56,6 +56,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .xr-radio-menu {
   .xr-radio-menu__content {
     max-height: 250px;

@@ -260,6 +260,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .approval-flow{
   position: relative;
   background-color: white;

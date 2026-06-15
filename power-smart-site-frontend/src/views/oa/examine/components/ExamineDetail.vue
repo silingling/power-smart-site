@@ -449,6 +449,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 @import '../../styles/content.scss';
 .detail-main {
   height: 100%;

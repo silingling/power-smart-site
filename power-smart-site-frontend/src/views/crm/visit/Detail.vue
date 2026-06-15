@@ -183,6 +183,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .image {
   color: #333;
   &-info {

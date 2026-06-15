@@ -27,6 +27,8 @@
 </template>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .main {
   padding: 0px;
   height: 100%;

@@ -248,6 +248,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 .header {
   width: 100%;
   margin-bottom: 30px;

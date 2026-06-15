@@ -80,6 +80,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
   .message-cell {
     position: relative;
     font-size: 14px;

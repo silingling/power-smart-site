@@ -153,6 +153,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 
 .related-business {
   margin-top: 10px;

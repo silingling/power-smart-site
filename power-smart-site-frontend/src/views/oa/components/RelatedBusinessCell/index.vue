@@ -81,6 +81,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .cell {
   padding: 8px;
   background-color: #f8faff;

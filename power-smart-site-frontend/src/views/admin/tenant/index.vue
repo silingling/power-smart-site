@@ -1235,6 +1235,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 
 .role-authorization {
   padding: 0 15px;

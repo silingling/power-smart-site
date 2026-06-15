@@ -192,6 +192,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .main {
   padding: 0 15px;
   height: 100%;

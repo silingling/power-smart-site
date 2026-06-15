@@ -84,6 +84,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../styles/xr-theme.scss";
 .members-dep-dialog__content {
   margin: 0 15px 10px;
   border: 1px solid $xr-border-line-color;

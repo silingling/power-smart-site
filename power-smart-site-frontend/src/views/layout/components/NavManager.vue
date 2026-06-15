@@ -221,6 +221,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 
   .nav-manager {
     position: absolute;

@@ -46,6 +46,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .project-cell {
   position: relative;
   padding: 8px 15px 8px 20px;

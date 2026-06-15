@@ -1003,7 +1003,8 @@
 </script>
 
 <style scoped lang="scss">
-	.crm-workbench {
+@import "../../../styles/xr-theme.scss";
+.crm-workbench {
 		height: 100%;
 	}
 	/*.titleHeader {

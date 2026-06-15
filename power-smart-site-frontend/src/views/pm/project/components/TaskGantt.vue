@@ -247,6 +247,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .task-list-board {
   background: #fff;
   height: 100%;

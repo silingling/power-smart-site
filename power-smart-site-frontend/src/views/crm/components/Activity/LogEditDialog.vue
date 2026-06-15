@@ -567,6 +567,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .mix-content {
   position: relative;
   border: 1px solid $xr-border-line-color;

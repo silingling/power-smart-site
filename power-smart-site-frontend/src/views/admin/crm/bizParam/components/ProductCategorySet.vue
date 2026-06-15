@@ -279,6 +279,8 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 .content-title {
   padding: 10px;
   border-bottom: 1px solid #e6e6e6;

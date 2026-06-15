@@ -108,6 +108,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .tabs-head-select {
   margin-left: 30px;
 }

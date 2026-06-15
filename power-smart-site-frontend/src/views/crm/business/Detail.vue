@@ -623,6 +623,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 @import '../styles/crmdetail.scss';
 .busi-state-main {
   margin-top: 15px;

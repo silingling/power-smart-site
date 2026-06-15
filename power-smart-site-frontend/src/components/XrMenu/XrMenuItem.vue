@@ -39,6 +39,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .xr-menu-item {
   padding: 12px 20px;
   position: relative;

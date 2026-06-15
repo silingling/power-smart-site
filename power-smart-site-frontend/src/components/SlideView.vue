@@ -197,6 +197,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../styles/xr-theme.scss";
+
 .slide-fade-enter-active,
 .slide-fade-leave-active {
   will-change: transform;

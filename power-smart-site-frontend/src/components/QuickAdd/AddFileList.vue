@@ -52,6 +52,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 /** 附件  */
 .file-cont {
   padding: 0 10px;

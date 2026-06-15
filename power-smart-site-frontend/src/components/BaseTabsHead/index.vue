@@ -53,6 +53,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .base-tabs-head {
   background-color: white;
   border-radius: $xr-border-radius-base;

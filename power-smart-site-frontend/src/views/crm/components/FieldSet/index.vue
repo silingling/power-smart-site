@@ -215,6 +215,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .field-set {
   &__search {
     padding: 8px 10px 0;

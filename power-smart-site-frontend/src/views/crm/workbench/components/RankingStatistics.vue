@@ -205,6 +205,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../../styles/xr-theme.scss";
 @import 'style';
 .content {
   width: 100%;

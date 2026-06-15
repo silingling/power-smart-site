@@ -167,6 +167,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 /deep/ .type-select {
   margin-right: 15px;
   .el-input__inner {

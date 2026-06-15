@@ -30,7 +30,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/mixin.scss";
+@import "../../../../../styles/xr-theme.scss";
+@import "@/styles/mixin.scss";
   @import "form.scss";
 
   .box {

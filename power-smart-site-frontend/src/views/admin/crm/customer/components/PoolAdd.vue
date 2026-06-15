@@ -635,6 +635,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 .pool-add-container {
   position: relative;
   height: 100%;

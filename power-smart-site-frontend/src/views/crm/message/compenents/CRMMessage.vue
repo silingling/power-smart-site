@@ -538,6 +538,8 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 @import '../../styles/table.scss';
 /** 场景和筛选 */
 .filtrate-button {

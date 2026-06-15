@@ -346,6 +346,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
   //头部
   .container {
     position: relative;

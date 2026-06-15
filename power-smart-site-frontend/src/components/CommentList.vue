@@ -234,7 +234,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .comment-list {
+@import "../styles/xr-theme.scss";
+.comment-list {
     .comment-list-item {
       .user-img {
         margin-right: 15px;

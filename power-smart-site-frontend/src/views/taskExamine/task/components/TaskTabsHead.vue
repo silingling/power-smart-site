@@ -47,6 +47,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .task-title {
   margin-left: 30px;
   color: #333333;

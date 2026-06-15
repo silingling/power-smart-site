@@ -114,6 +114,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 /** 头部的css */
 .flow-head {
   padding: 8px 0;

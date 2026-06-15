@@ -305,6 +305,8 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .son-flex {
   width: 90%;
 }

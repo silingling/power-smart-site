@@ -367,6 +367,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .filtrate-content {
   padding: 15px 20px 5px 20px;
   .title-box {

@@ -103,6 +103,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .xr-detail-header {
   position: relative;
   padding: 20px;

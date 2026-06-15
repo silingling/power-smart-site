@@ -286,6 +286,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 /** 跟进记录相关的 日志 审批任务 日程 项目 公共css */
 .fl-c {
   background-color: white;

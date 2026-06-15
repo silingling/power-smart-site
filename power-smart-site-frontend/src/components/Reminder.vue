@@ -51,6 +51,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../styles/xr-theme.scss";
+
 .reminder-wrapper {
   .reminder-body {
     width: auto;

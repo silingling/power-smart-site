@@ -284,6 +284,8 @@ export default {
 }
 </script>
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .cr-contianer {
   // height: 450px;
   position: relative;

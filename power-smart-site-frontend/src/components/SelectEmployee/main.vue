@@ -503,6 +503,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../styles/xr-theme.scss";
 @import '@/styles/mixin.scss';
 .employee-department {
   display: flex;

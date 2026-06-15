@@ -416,6 +416,8 @@
 
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 /deep/.el-form--inline .el-form-item{
   display: inline-block;
     margin-right: 10px;

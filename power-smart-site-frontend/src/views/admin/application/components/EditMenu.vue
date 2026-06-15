@@ -131,6 +131,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
   .crm-create-container {
     position: relative;
     height: 100%;

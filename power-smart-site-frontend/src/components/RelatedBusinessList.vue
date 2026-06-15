@@ -92,7 +92,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .related-business-list {
+@import "../styles/xr-theme.scss";
+.related-business-list {
     width: 100%;
     .list-item {
       font-size: 12px;

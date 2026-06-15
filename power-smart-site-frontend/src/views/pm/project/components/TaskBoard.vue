@@ -325,6 +325,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../../styles/xr-theme.scss";
 .content-box {
   height: 100%;
   overflow-y: hidden;

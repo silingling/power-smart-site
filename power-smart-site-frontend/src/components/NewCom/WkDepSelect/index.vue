@@ -333,6 +333,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .wk-dep-select {
   height: 34px;
   position: relative;

@@ -220,6 +220,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../styles/xr-theme.scss";
 .details-box {
   display: flex;
   flex-direction: column;

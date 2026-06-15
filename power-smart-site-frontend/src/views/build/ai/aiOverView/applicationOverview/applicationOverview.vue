@@ -558,6 +558,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 .top_top {
 		margin-left: 0.14rem;
 		overflow: hidden;

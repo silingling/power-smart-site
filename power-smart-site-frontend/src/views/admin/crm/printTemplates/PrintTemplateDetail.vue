@@ -479,6 +479,8 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .print-template-detail {
   height: 100%;
   box-sizing: border-box;

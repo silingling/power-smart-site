@@ -372,6 +372,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 //表头
 .table-head-container {
   //border-bottom: 1px solid #e6e6e6;

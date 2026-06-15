@@ -502,6 +502,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../styles/xr-theme.scss";
 .new-journal {
   display: flex;
   flex-direction: column;

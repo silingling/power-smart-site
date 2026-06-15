@@ -403,6 +403,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../../styles/xr-theme.scss";
 .project-settings {
   .title {
     height: 34px;

@@ -184,6 +184,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 @mixin v-align {
   vertical-align: middle;
 }

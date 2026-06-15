@@ -61,6 +61,7 @@
 </script>
 
 <style scoped lang="scss">
+@import "../../../../styles/xr-theme.scss";
 .card {
   background-color: white;
   border-radius: $xr-border-radius-base;

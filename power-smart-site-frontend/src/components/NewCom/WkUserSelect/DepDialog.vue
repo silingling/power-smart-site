@@ -81,6 +81,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .el-dialog__wrapper {
   /deep/ .el-dialog__body {
     border-top: 1px solid $xr-border-color-base;

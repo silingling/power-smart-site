@@ -119,7 +119,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .reply-comment {
+@import "../styles/xr-theme.scss";
+.reply-comment {
     border: 1px solid #e6e6e6;
     border-radius: $xr-border-radius-base;
     overflow: hidden;

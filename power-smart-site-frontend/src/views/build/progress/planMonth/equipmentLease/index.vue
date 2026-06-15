@@ -286,6 +286,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 	.main {
 		height: 100%;
 

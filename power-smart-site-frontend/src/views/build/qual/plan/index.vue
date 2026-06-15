@@ -504,6 +504,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 
 
   /** 场景和筛选 */

@@ -504,6 +504,8 @@ export default {
 }
 </script>
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 @import '../styles/table.scss';
 
 .map-box {

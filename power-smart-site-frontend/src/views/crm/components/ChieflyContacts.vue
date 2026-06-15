@@ -198,6 +198,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .chiefly-contacts {
   overflow: auto;
   height: 100%;

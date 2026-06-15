@@ -499,6 +499,8 @@ export default {
 }
 </script>
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .scene-name {
   font-size: 12px;
   padding-bottom: 5px;

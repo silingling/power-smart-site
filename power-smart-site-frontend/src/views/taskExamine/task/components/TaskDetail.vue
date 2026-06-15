@@ -1661,6 +1661,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 $btn-b-color: #f8faff;
 $btn-color: #333333;
 $btn-b-hover-color: #eff4ff;

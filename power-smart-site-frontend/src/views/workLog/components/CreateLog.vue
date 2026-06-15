@@ -544,6 +544,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../styles/xr-theme.scss";
 /deep/ .el-tabs__header {
   margin: 0;
 }

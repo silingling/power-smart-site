@@ -87,6 +87,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .header-icon {
   display: inline-block;
   width: 36px;

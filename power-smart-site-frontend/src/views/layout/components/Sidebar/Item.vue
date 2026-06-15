@@ -36,6 +36,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 @import './variables.scss';
 .menu-item-content {
   width: 100%;

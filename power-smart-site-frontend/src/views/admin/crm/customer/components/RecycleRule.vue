@@ -221,6 +221,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 .recycle-rule {
   font-size: 13px;
 

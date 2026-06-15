@@ -356,6 +356,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .se-table-header {
   height: 50px;
   background-color: white;

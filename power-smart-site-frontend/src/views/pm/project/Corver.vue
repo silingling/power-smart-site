@@ -223,6 +223,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .corver {
   height: 100%;
   overflow: hidden;

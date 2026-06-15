@@ -273,6 +273,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../../styles/xr-theme.scss";
 .project-screening /deep/ .el-card__body {
   padding: 0;
 }

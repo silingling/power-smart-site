@@ -296,6 +296,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .main {
   height:100%;
   /*margin:0 15px;*/

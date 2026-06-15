@@ -563,6 +563,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../../../styles/xr-theme.scss";
+
 @import '../../../styles/table.scss';
 
 /** 容器布局 */

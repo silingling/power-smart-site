@@ -629,7 +629,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
+@import "../../../../styles/xr-theme.scss";
 /*详情页面样式*/
 	.main-table-header-button {
 		float: right;

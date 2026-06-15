@@ -76,6 +76,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .d-container-bd--left{
 	height: 100%;
 }

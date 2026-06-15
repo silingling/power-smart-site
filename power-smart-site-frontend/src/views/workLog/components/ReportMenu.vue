@@ -42,6 +42,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .report-menu {
 
   &-btn {

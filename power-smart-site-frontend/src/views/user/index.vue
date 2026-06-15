@@ -78,7 +78,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .person-center {
+@import "../../styles/xr-theme.scss";
+.person-center {
     width: 1180px;
     margin: 0 auto;
     .left {

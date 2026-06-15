@@ -267,6 +267,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .search-list {
   padding: 5px;
   height: 248px;

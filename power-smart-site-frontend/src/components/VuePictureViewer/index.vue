@@ -539,6 +539,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 .perview-header {
   width: 100%;
   height: 40px;

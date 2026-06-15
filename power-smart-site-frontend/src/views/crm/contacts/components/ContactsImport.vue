@@ -138,6 +138,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .contacts-import {
   overflow: auto;
   height: 100%;

@@ -217,6 +217,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .content {
   position: relative;
   padding: 10px 60px;

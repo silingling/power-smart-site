@@ -1120,6 +1120,8 @@ import {sortColumn } from '@/utils'
 
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
   .main {
     height: 100%;
   }

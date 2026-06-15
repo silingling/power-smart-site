@@ -327,6 +327,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .wk-user-select {
   height: 300px;
   &__left {

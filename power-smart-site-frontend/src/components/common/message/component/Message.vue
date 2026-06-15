@@ -355,6 +355,8 @@
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
   .full-container {
     position: fixed;
     top: 0;

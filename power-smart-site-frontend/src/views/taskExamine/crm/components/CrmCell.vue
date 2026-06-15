@@ -200,6 +200,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 .section {
   background-color: white;
   border-radius: $xr-border-radius-base;

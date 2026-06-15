@@ -294,6 +294,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../../../../styles/xr-theme.scss";
 .el-steps {
   margin-bottom: 15px;
 

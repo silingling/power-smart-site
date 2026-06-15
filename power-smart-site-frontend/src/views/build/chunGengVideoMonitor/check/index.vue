@@ -202,6 +202,8 @@
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
   .system-customer {
     height: 100%;
     box-sizing: border-box;

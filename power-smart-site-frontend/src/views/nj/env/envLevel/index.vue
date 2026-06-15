@@ -400,6 +400,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../../styles/xr-theme.scss";
+
 /** 勾选操作开始  */
 /*需要勾选则加上	*/
 .selection-bar {

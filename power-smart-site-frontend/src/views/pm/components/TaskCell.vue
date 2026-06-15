@@ -180,6 +180,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import "../../../styles/xr-theme.scss";
+
 .list {
   background-color: white;
   padding: 0 10px;

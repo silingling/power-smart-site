@@ -338,6 +338,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../styles/xr-theme.scss";
+
 @import './style';
 
 .base-tabs-head {

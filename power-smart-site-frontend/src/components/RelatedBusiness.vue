@@ -139,6 +139,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../styles/xr-theme.scss";
 .related-business {
   color: #777;
   font-size: 12px;
