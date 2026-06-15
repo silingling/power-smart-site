@@ -562,3 +562,443 @@ CREATE TABLE IF NOT EXISTS sys_config (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置';
+
+-- ============================================
+-- Phase 2: RBAC 权限系统
+-- ============================================
+
+-- 角色表
+CREATE TABLE IF NOT EXISTS sys_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL COMMENT '角色显示名',
+    role_key VARCHAR(50) NOT NULL COMMENT '角色标识(admin/manager/safety_officer/...）',
+    status TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    remark VARCHAR(255) COMMENT '备注',
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_role_key (role_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色';
+
+-- 菜单/权限表
+CREATE TABLE IF NOT EXISTS sys_menu (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    parent_id BIGINT DEFAULT 0 COMMENT '父菜单ID（0=顶级）',
+    name VARCHAR(100) NOT NULL COMMENT '菜单/权限名称',
+    permission_key VARCHAR(100) COMMENT '权限标识符(build:safetyMaterial:list）',
+    path VARCHAR(200) COMMENT '前端路由路径',
+    icon VARCHAR(100) COMMENT '菜单图标',
+    menu_type TINYINT DEFAULT 1 COMMENT '1-目录 2-菜单 3-按钮/权限点',
+    visible TINYINT DEFAULT 1 COMMENT '1-显示 0-隐藏',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    status TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    is_deleted INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_parent (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单/权限';
+
+-- 角色-菜单关联表
+CREATE TABLE IF NOT EXISTS sys_role_menu (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    menu_id BIGINT NOT NULL,
+    UNIQUE KEY uk_role_menu (role_id, menu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色菜单关联';
+
+-- 用户-角色关联表
+CREATE TABLE IF NOT EXISTS user_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    UNIQUE KEY uk_user_role (user_id, role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联';
+
+-- ========== 种子数据：角色 ==========
+INSERT IGNORE INTO sys_role (role_name, role_key, status, sort_order, remark) VALUES
+('超级管理员', 'admin', 1, 1, '系统超级管理员，拥有所有权限'),
+('项目经理', 'project_manager', 1, 2, '项目管理，查看本项目所有数据'),
+('安全员', 'safety_officer', 1, 3, '安全质量管理，编辑安全/质量资料'),
+('资料员', 'data_clerk', 1, 4, '资料管理与归档'),
+('普通用户', 'user', 1, 5, '基础查看权限');
+
+-- ========== 种子数据：菜单树 ==========
+INSERT IGNORE INTO sys_menu (parent_id, name, permission_key, path, icon, menu_type, sort_order) VALUES
+-- 一级目录（首页）
+(0, '首页', 'dashboard', '/dashboard', 'dashboard', 1, 1),
+  (1, '项目看板', 'dashboard:view', '/dashboard', 'dashboard', 2, 1),
+-- 一级目录（人员管理）
+(0, '人员管理', 'worker', '/worker', 'team', 1, 2),
+  (3, '人员花名册', 'worker:list', '/worker/list', 'list', 2, 1),
+  (3, '班组管理', 'worker:team', '/worker/team', 'team', 2, 2),
+  (3, '考勤管理', 'worker:attendance', '/worker/attendance', 'attendance', 2, 3),
+-- 一级目录（设备管理）
+(0, '设备管理', 'device', '/device', 'camera', 1, 3),
+  (7, '设备资产', 'device:assets', '/device/assets', 'list', 2, 1),
+  (7, '视频监控', 'device:camera', '/device/camera', 'camera', 2, 2),
+  (7, '监测数据', 'device:monitor', '/device/monitor', 'data', 2, 3),
+  (7, '变电站设备', 'device:substation', '/device/substation', 'cluster', 2, 4),
+  (7, '输电线路', 'device:transmission', '/device/transmission', 'line-chart', 2, 5),
+-- 一级目录（安全质量）
+(0, '安全质量', 'safety', '/safety', 'shield', 1, 4),
+  (11, '安全资料', 'safety:material', '/safety/material', 'file', 2, 1),
+  (11, '质量资料', 'safety:quality', '/safety/quality', 'check-circle', 2, 2),
+-- 一级目录（进度管理）
+(0, '进度管理', 'progress', '/progress', 'progress', 1, 5),
+  (14, '进度计划', 'progress:plan', '/progress/plan', 'plan', 2, 1),
+  (14, '进度详情', 'progress:detail', '/progress/detail', 'detail', 2, 2),
+-- 一级目录（系统管理）
+(0, '系统管理', 'system', '/system', 'setting', 1, 99),
+  (17, '用户管理', 'system:user', '/system/user', 'user', 2, 1),
+  (17, '角色管理', 'system:role', '/system/role', 'role', 2, 2),
+  (17, '菜单管理', 'system:menu', '/system/menu', 'menu', 2, 3),
+  (17, '部门管理', 'system:dept', '/system/dept', 'dept', 2, 4),
+  (17, '系统配置', 'system:config', '/system/config', 'config', 2, 5);
+
+-- ========== 种子数据：角色-菜单（管理员 = 全部菜单） ==========
+INSERT IGNORE INTO sys_role_menu (role_id, menu_id)
+SELECT 1, id FROM sys_menu WHERE status = 1 AND is_deleted = 0;
+
+-- ========== 种子数据：admin 用户关联角色 ==========
+INSERT IGNORE INTO user_role (user_id, role_id) VALUES (1, 1);
+
+-- ============================================
+-- Phase 3: 审批流 + 文件存储
+-- ============================================
+
+-- 审批节点配置表
+CREATE TABLE IF NOT EXISTS approval_node (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    biz_type VARCHAR(50) NOT NULL COMMENT '业务类型(hazard/work_order/...)',
+    node_name VARCHAR(100) NOT NULL COMMENT '节点名称(如"安全员初审"/"项目经理终审")',
+    node_order INT DEFAULT 1 COMMENT '节点顺序(1开始)',
+    role_key VARCHAR(50) NOT NULL COMMENT '负责角色(admin/safety_officer/...)',
+    node_action VARCHAR(50) COMMENT '节点动作(pass/reject/escalate)',
+    timeout_hours INT DEFAULT 0 COMMENT '超时小时数(0=不限制)',
+    auto_action VARCHAR(20) DEFAULT 'escalate' COMMENT '超时自动处理(escalate/pass/reject)',
+    status TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_biz (biz_type, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审批节点配置';
+
+-- 审批记录表
+CREATE TABLE IF NOT EXISTS approval_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    biz_type VARCHAR(50) NOT NULL COMMENT '业务类型(hazard/work_order)',
+    biz_id BIGINT NOT NULL COMMENT '业务ID(隐患/工单ID)',
+    node_id BIGINT COMMENT '审批节点ID',
+    node_name VARCHAR(100) COMMENT '节点名称',
+    action VARCHAR(20) NOT NULL COMMENT '操作(pass/reject/escalate/rework)',
+    operator_id BIGINT COMMENT '操作人ID',
+    operator_name VARCHAR(50) COMMENT '操作人姓名',
+    comment VARCHAR(500) COMMENT '审批意见',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_biz (biz_type, biz_id),
+    KEY idx_operator (operator_id),
+    KEY idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审批记录';
+
+-- 文件存储记录表
+CREATE TABLE IF NOT EXISTS file_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
+    file_path VARCHAR(500) NOT NULL COMMENT '存储路径',
+    file_size BIGINT DEFAULT 0 COMMENT '文件大小(字节)',
+    file_type VARCHAR(20) COMMENT '文件类型(pdf/doc/jpg/png/...)',
+    mime_type VARCHAR(100) COMMENT 'MIME类型',
+    storage_type VARCHAR(20) DEFAULT 'local' COMMENT '存储类型(local/oss/s3)',
+    biz_type VARCHAR(50) COMMENT '关联业务类型(hazard_material/safety_material/...)',
+    biz_id BIGINT COMMENT '关联业务ID',
+    upload_by BIGINT COMMENT '上传人ID',
+    upload_by_name VARCHAR(50) COMMENT '上传人姓名',
+    is_deleted INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_biz (biz_type, biz_id),
+    KEY idx_uploader (upload_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件存储记录';
+
+-- 隐患与审批流程关联表
+CREATE TABLE IF NOT EXISTS hazard_approval (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hazard_id BIGINT NOT NULL COMMENT '隐患ID',
+    current_node INT DEFAULT 1 COMMENT '当前审批节点序号',
+    total_nodes INT DEFAULT 0 COMMENT '总节点数',
+    approval_status VARCHAR(20) DEFAULT 'pending' COMMENT '审批状态(pending/approving/approved/rejected/escalated)',
+    started_at DATETIME COMMENT '审批开始时间',
+    finished_at DATETIME COMMENT '审批完成时间',
+    escalated TINYINT DEFAULT 0 COMMENT '是否已升级',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_hazard (hazard_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='隐患审批流程';
+
+-- ========== 种子数据：隐患审批节点 ==========
+INSERT IGNORE INTO approval_node (biz_type, node_name, node_order, role_key, timeout_hours, auto_action) VALUES
+('hazard', '安全员初审', 1, 'safety_officer', 12, 'escalate'),
+('hazard', '安全负责人复核', 2, 'safety_officer', 24, 'escalate'),
+('hazard', '项目经理终审', 3, 'project_manager', 48, 'escalate');
+
+-- ============================================
+-- Phase 4: 实时与推送
+-- ============================================
+
+-- 告警规则表
+CREATE TABLE IF NOT EXISTS alert_rule (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    rule_name VARCHAR(100) NOT NULL COMMENT '规则名称',
+    device_type VARCHAR(50) COMMENT '设备类型(塔吊/电焊机/扬尘/...)（空=通用）',
+    sensor_type VARCHAR(50) NOT NULL COMMENT '传感器类型(load/tilt/temperature/pm25/noise/...)',
+    operator VARCHAR(10) NOT NULL COMMENT '比较符(gt/lt/gte/lte/eq)',
+    warning_threshold DECIMAL(18,4) COMMENT '告警阈值',
+    critical_threshold DECIMAL(18,4) COMMENT '严重告警阈值(可选)',
+    duration_seconds INT DEFAULT 0 COMMENT '持续超限秒数(防抖)',
+    enabled TINYINT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    remark VARCHAR(255) COMMENT '备注',
+    is_deleted INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告警规则';
+
+-- 系统通知表
+CREATE TABLE IF NOT EXISTS system_notification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '接收用户ID',
+    title VARCHAR(200) NOT NULL COMMENT '通知标题',
+    content VARCHAR(1000) COMMENT '通知内容',
+    biz_type VARCHAR(50) COMMENT '业务类型(hazard_approval/device_alarm/work_order/...)',
+    biz_id BIGINT COMMENT '业务ID',
+    level VARCHAR(20) DEFAULT 'info' COMMENT '级别(info/warning/critical)',
+    is_read TINYINT DEFAULT 0 COMMENT '0-未读 1-已读',
+    read_at DATETIME COMMENT '读取时间',
+    is_deleted INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user (user_id, is_read),
+    KEY idx_biz (biz_type, biz_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统通知';
+
+-- ========== 种子数据：默认告警规则 ==========
+INSERT IGNORE INTO alert_rule (rule_name, device_type, sensor_type, operator, warning_threshold, critical_threshold, duration_seconds) VALUES
+('塔吊负载告警', '塔吊', 'load', 'gt', 80.0000, 90.0000, 5),
+('塔吊倾斜告警', '塔吊', 'tilt', 'gt', 2.0000, 3.0000, 3),
+('塔吊风速告警', '塔吊', 'wind_speed', 'gt', 10.7000, 13.8000, 10),
+('电焊机温度告警', '电焊机', 'temperature', 'gt', 65.0000, 85.0000, 5),
+('扬尘PM2.5告警', NULL, 'pm25', 'gt', 75.0000, 150.0000, 10),
+('扬尘PM10告警', NULL, 'pm10', 'gt', 150.0000, 250.0000, 10),
+('噪声告警', NULL, 'noise', 'gt', 70.0000, 85.0000, 10);
+
+-- ========== Phase 5A：变电站设备台账 ==========
+
+CREATE TABLE IF NOT EXISTS substation_equipment (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    device_type VARCHAR(20) NOT NULL COMMENT '设备类型: GIS/transformer/breaker',
+    device_code VARCHAR(100) NOT NULL COMMENT '设备编号（唯一标识）',
+    device_name VARCHAR(200) NOT NULL COMMENT '设备名称',
+    bay_number VARCHAR(50) COMMENT '间隔编号（GIS专用）',
+    voltage_level VARCHAR(20) COMMENT '电压等级: 110kV/220kV/500kV',
+
+    -- 通用资产字段
+    manufacturer VARCHAR(200) COMMENT '制造商',
+    model VARCHAR(200) COMMENT '型号',
+    serial_number VARCHAR(100) COMMENT '出厂编号',
+    manufacture_date DATE COMMENT '出厂日期',
+    install_date DATE COMMENT '安装日期',
+    commission_date DATE COMMENT '投运日期',
+    design_life_years INT COMMENT '设计寿命(年)',
+    status VARCHAR(20) DEFAULT 'in_service' COMMENT '运行状态: in_service/maintenance/retired/fault',
+    last_maintenance_date DATE COMMENT '最近检修日期',
+    next_maintenance_date DATE COMMENT '下次检修日期',
+
+    -- GIS 专用
+    gas_type VARCHAR(50) COMMENT '绝缘气体类型(SF6/混合气体)',
+    sf6_pressure_kpa DECIMAL(10,2) COMMENT 'SF6气压(kPa)',
+    sf6_alarm_pressure_kpa DECIMAL(10,2) COMMENT 'SF6告警气压(kPa)',
+    sealed_parts_count INT COMMENT '密封气室数量',
+
+    -- 变压器(Transformer) 专用
+    rated_capacity_mva DECIMAL(12,2) COMMENT '额定容量(MVA)',
+    cooling_method VARCHAR(50) COMMENT '冷却方式(ONAN/OFAF/ODAF)',
+    tap_changer_type VARCHAR(50) COMMENT '分接开关类型(OLTC/off-circuit)',
+    tap_changer_positions INT COMMENT '分接档位数',
+    oil_type VARCHAR(50) COMMENT '绝缘油类型(矿物油/天然酯)',
+    oil_weight_kg DECIMAL(10,2) COMMENT '油重(kg)',
+    winding_connection VARCHAR(10) COMMENT '绕组连接组别(YNd11/Yyn0)',
+
+    -- 断路器(Breaker) 专用
+    rated_current_ka DECIMAL(10,2) COMMENT '额定电流(kA)',
+    rated_voltage_kv DECIMAL(10,2) COMMENT '额定电压(kV)',
+    rated_breaking_current_ka DECIMAL(10,2) COMMENT '额定开断电流(kA)',
+    operating_mechanism VARCHAR(50) COMMENT '操动机构类型(spring/hydraulic/pneumatic)',
+    operating_voltage_v INT COMMENT '操作电压(V)',
+    mechanical_operations INT DEFAULT 0 COMMENT '累计机械操作次数',
+    breaking_count INT DEFAULT 0 COMMENT '累计开断次数',
+
+    -- 位置/关联
+    location_desc VARCHAR(255) COMMENT '物理位置描述',
+    longitude DECIMAL(11,7) COMMENT '经度',
+    latitude DECIMAL(10,7) COMMENT '纬度',
+    parent_id BIGINT COMMENT '所属上级设备ID(如变压器下套管)',
+    video_monitor_id BIGINT COMMENT '关联视频监控ID',
+
+    -- 台账附件
+    attachment_json TEXT COMMENT '附件列表JSON(出厂报告/试验报告)',
+    remark TEXT COMMENT '备注',
+    create_by VARCHAR(50) COMMENT '创建人',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    KEY idx_project_device_type (project_id, device_type),
+    KEY idx_device_code (device_code),
+    KEY idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='变电站设备台账';
+
+-- 变电站巡检记录
+CREATE TABLE IF NOT EXISTS substation_inspection (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL,
+    equipment_id BIGINT NOT NULL COMMENT '设备ID',
+    inspector VARCHAR(50) NOT NULL COMMENT '巡检人',
+    inspection_type VARCHAR(20) DEFAULT 'routine' COMMENT '类型: routine/patrol/special',
+    inspection_date DATE NOT NULL COMMENT '巡检日期',
+    content TEXT COMMENT '检测内容JSON',
+    sf6_pressure DECIMAL(10,2) COMMENT 'SF6气压(kPa)',
+    temperature DECIMAL(6,2) COMMENT '温度(°C)',
+    noise_db DECIMAL(6,2) COMMENT '噪音(dB)',
+    vibration_mm DECIMAL(8,4) COMMENT '振动幅值(mm)',
+    result VARCHAR(10) DEFAULT 'normal' COMMENT '结果: normal/abnormal/urgent',
+    description TEXT COMMENT '巡检描述/异常说明',
+    image_json TEXT COMMENT '现场照片(JSON数组)',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_equipment (equipment_id),
+    KEY idx_date (inspection_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='变电站巡检记录';
+
+-- ========== Phase 5B：输电线路（杆塔/档距） ==========
+
+CREATE TABLE IF NOT EXISTS transmission_tower (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    tower_code VARCHAR(100) NOT NULL COMMENT '杆塔编号（唯一，如#001-#N）',
+    tower_name VARCHAR(200) COMMENT '杆塔名称',
+    tower_type VARCHAR(30) NOT NULL COMMENT '类型: angle/tension/suspension/terminal/transition',
+    voltage_level VARCHAR(20) COMMENT '电压等级: 110kV/220kV/500kV',
+    height_m DECIMAL(8,2) COMMENT '杆塔高度(m)',
+    latitude DECIMAL(10,7) COMMENT '纬度',
+    longitude DECIMAL(11,7) COMMENT '经度',
+    altitude_m DECIMAL(8,2) COMMENT '海拔(m)',
+    foundation_type VARCHAR(50) COMMENT '基础类型: cast_in_place/pile/rock',
+    foundation_depth_m DECIMAL(6,2) COMMENT '基础埋深(m)',
+    leg_count INT DEFAULT 4 COMMENT '塔腿数量',
+    manufacturer VARCHAR(200) COMMENT '制造商',
+    model VARCHAR(200) COMMENT '型号',
+    serial_number VARCHAR(100) COMMENT '出厂编号',
+    manufacture_date DATE COMMENT '出厂日期',
+    install_date DATE COMMENT '安装日期',
+    design_life_years INT COMMENT '设计寿命(年)',
+    status VARCHAR(20) DEFAULT 'in_service' COMMENT '运行状态: in_service/maintenance/retired',
+    last_inspection_date DATE COMMENT '最近巡检日期',
+    next_inspection_date DATE COMMENT '下次巡检日期',
+    image_json TEXT COMMENT '杆塔照片JSON',
+    remark TEXT COMMENT '备注',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_tower_code (project_id, tower_code),
+    KEY idx_project (project_id),
+    KEY idx_type (tower_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='输电线路杆塔台账';
+
+-- 档距/弧垂表（一对二：from_tower ↔ to_tower 构成一个档距）
+CREATE TABLE IF NOT EXISTS transmission_span (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    span_code VARCHAR(100) NOT NULL COMMENT '档距编号',
+    from_tower_id BIGINT NOT NULL COMMENT '起始杆塔ID',
+    to_tower_id BIGINT NOT NULL COMMENT '终止杆塔ID',
+    span_length_m DECIMAL(10,2) NOT NULL COMMENT '档距长度(m)',
+    conductor_type VARCHAR(50) COMMENT '导线类型(LGJ/LGJF/钢芯铝绞线)',
+    conductor_spec VARCHAR(100) COMMENT '导线规格(如LGJ-300/40)',
+    circuit_count INT DEFAULT 1 COMMENT '回路数',
+    design_sag_m DECIMAL(8,2) COMMENT '设计弧垂(m)',
+    current_sag_m DECIMAL(8,2) COMMENT '当前弧垂(m)',
+    max_sag_allowed_m DECIMAL(8,2) COMMENT '最大允许弧垂(m)',
+    sag_alarm_threshold_pct DECIMAL(5,2) DEFAULT 90 COMMENT '弧垂告警阈值(%)',
+    max_wind_speed_ms DECIMAL(6,2) COMMENT '最大设计风速(m/s)',
+    min_clearance_m DECIMAL(6,2) COMMENT '最小对地安全距离(m)',
+    terrain_type VARCHAR(30) COMMENT '地形类型: plain/hill/mountain/crossing',
+    crossing_desc VARCHAR(255) COMMENT '交叉跨越描述(跨越公路/铁路/河流)',
+    last_inspection_date DATE COMMENT '最近巡检日期',
+    next_inspection_date DATE COMMENT '下次巡检日期',
+    status VARCHAR(20) DEFAULT 'normal' COMMENT '状态: normal/warning/critical',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_span_code (project_id, span_code),
+    KEY idx_from_tower (from_tower_id),
+    KEY idx_to_tower (to_tower_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='输电线路档距/弧垂台账';
+
+-- ========== Phase 5C：安全围栏/电子围栏 ==========
+
+CREATE TABLE IF NOT EXISTS safety_fence (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    fence_name VARCHAR(100) NOT NULL COMMENT '围栏名称',
+    fence_type VARCHAR(20) NOT NULL COMMENT '类型: circle(圆形)/polygon(多边形)',
+    color VARCHAR(10) DEFAULT '#FF0000' COMMENT '围栏显示颜色 #RRGGBB',
+    description TEXT COMMENT '围栏描述',
+    -- 圆形参数
+    center_lat DECIMAL(10,7) COMMENT '中心点纬度',
+    center_lng DECIMAL(11,7) COMMENT '中心点经度',
+    radius_m DECIMAL(10,2) COMMENT '半径(米)',
+    -- 多边形参数
+    polygon_points TEXT COMMENT '多边形顶点坐标JSON: [[lng,lat],[lng,lat],...]',
+    alert_level VARCHAR(10) DEFAULT 'medium' COMMENT '告警级别: high/medium/low',
+    enabled TINYINT DEFAULT 1 COMMENT '是否启用: 1-启用 0-禁用',
+    create_by VARCHAR(50) COMMENT '创建人',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_project (project_id),
+    KEY idx_type (fence_type),
+    KEY idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全围栏/电子围栏';
+
+CREATE TABLE IF NOT EXISTS fence_alert_event (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    fence_id BIGINT NOT NULL COMMENT '关联围栏ID',
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    event_type VARCHAR(10) NOT NULL COMMENT '事件类型: enter(进入)/leave(离开)',
+    target_type VARCHAR(20) NOT NULL COMMENT '目标类型: person/device/vehicle',
+    target_id VARCHAR(100) NOT NULL COMMENT '目标ID(人员ID/设备编号)',
+    target_name VARCHAR(100) COMMENT '目标名称(人员姓名/设备名称)',
+    event_lat DECIMAL(10,7) COMMENT '事件发生纬度',
+    event_lng DECIMAL(11,7) COMMENT '事件发生经度',
+    description TEXT COMMENT '事件描述',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT '状态: pending(待处理)/processed(已处理)/ignored(已忽略)',
+    processed_by VARCHAR(50) COMMENT '处理人',
+    processed_at DATETIME COMMENT '处理时间',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_fence (fence_id),
+    KEY idx_project (project_id),
+    KEY idx_status (status),
+    KEY idx_event_type (event_type),
+    KEY idx_target (target_type, target_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='围栏告警事件';
+
+-- 默认菜单条目示例（可选）
+INSERT IGNORE INTO sys_permission (permission_name, permission_code, module, parent_id, sort_order, is_deleted, created_at)
+SELECT '安全围栏', 'safetyFence', 'device', id, 90, 0, NOW()
+FROM sys_permission WHERE permission_code = 'device_root' AND NOT EXISTS (
+    SELECT 1 FROM sys_permission WHERE permission_code = 'safetyFence'
+);
+
+INSERT IGNORE INTO sys_permission (permission_name, permission_code, module, parent_id, sort_order, is_deleted, created_at)
+SELECT '围栏告警', 'fenceAlertEvent', 'device', id, 91, 0, NOW()
+FROM sys_permission WHERE permission_code = 'device_root' AND NOT EXISTS (
+    SELECT 1 FROM sys_permission WHERE permission_code = 'fenceAlertEvent'
+);

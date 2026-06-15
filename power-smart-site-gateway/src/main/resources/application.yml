@@ -1,11 +1,34 @@
 server:
   port: 8080
+  shutdown: graceful                    # 优雅关闭
 
 spring:
   application:
     name: power-smart-gateway
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
   cloud:
     gateway:
+      # ---------- 全局默认过滤器 ----------
+      default-filters:
+        # 限流：默认每秒 100 请求，突发 200
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 100
+            redis-rate-limiter.burstCapacity: 200
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@remoteAddrKeyResolver}"
+
+      # ---------- 全局 CORS ----------
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+
       routes:
         # ========== 同业电力前端适配路由 ==========
 
@@ -68,6 +91,23 @@ spring:
           predicates: [Path=/build/safetyMaterial/**]
           filters: [StripPrefix=0]
 
+        # 隐患上报 + 工单
+        - id: hazard-report
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/hazardReport/**]
+          filters: [StripPrefix=0]
+
+        - id: hazard-work-order
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/hazardWorkOrder/**]
+          filters: [StripPrefix=0]
+
+        # 文件上传/预览
+        - id: file-upload
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/ApiFile/**]
+          filters: [StripPrefix=0]
+
         # 质量
         - id: qual-material
           uri: lb://power-smart-hazard
@@ -126,6 +166,58 @@ spring:
         - id: monitor-alert
           uri: lb://power-smart-device
           predicates: [Path=/build/monitorPointAlert/**,/build/eqMonitorDataAt/**]
+          filters: [StripPrefix=0]
+
+        # 告警规则管理
+        - id: alert-rule
+          uri: lb://power-smart-device
+          predicates: [Path=/build/alertRule/**]
+          filters: [StripPrefix=0]
+
+        # 通知管理
+        - id: notification
+          uri: lb://power-smart-device
+          predicates: [Path=/build/notification/**]
+          filters: [StripPrefix=0]
+
+        # SSE 实时推送
+        - id: sse-subscribe
+          uri: lb://power-smart-device
+          predicates: [Path=/api/v1/sse/**]
+
+        # 变电站设备台账
+        - id: substation-equipment
+          uri: lb://power-smart-device
+          predicates: [Path=/build/substationEquipment/**]
+          filters: [StripPrefix=0]
+
+        # 变电站巡检
+        - id: substation-inspection
+          uri: lb://power-smart-device
+          predicates: [Path=/build/substationInspection/**]
+          filters: [StripPrefix=0]
+
+        # 输电线路杆塔
+        - id: transmission-tower
+          uri: lb://power-smart-device
+          predicates: [Path=/build/transmissionTower/**]
+          filters: [StripPrefix=0]
+
+        # 输电线路档距
+        - id: transmission-span
+          uri: lb://power-smart-device
+          predicates: [Path=/build/transmissionSpan/**]
+          filters: [StripPrefix=0]
+
+        # 安全围栏
+        - id: safety-fence
+          uri: lb://power-smart-device
+          predicates: [Path=/build/safetyFence/**]
+          filters: [StripPrefix=0]
+
+        - id: fence-alert-event
+          uri: lb://power-smart-device
+          predicates: [Path=/build/fenceAlertEvent/**]
           filters: [StripPrefix=0]
 
         # 看板
@@ -187,3 +279,19 @@ spring:
 spring.cloud.nacos.discovery:
   server-addr: ${NACOS_HOST:127.0.0.1}:8848
   namespace: ${NACOS_NAMESPACE:public}
+
+# ---------- Actuator ----------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  endpoint:
+    health:
+      show-details: always
+
+# ---------- 日志 ----------
+logging:
+  level:
+    com.powersmart.gateway: debug
+    org.springframework.cloud.gateway: info
