@@ -76,11 +76,6 @@ exports.cssLoaders = function (options) {
     }),
     scss: generateLoaders('sass', {
       implementation: require('sass')
-    }).concat({
-      loader: 'sass-resources-loader',
-      options: {
-        resources: path.resolve(__dirname, '../src/styles/xr-theme.scss')
-      }
     }),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')
