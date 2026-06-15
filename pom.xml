@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.18</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.powersmart</groupId>
+    <artifactId>power-smart-site</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>电力智慧工地平台</name>
+
+    <modules>
+        <module>power-smart-site-common</module>
+        <module>power-smart-site-gateway</module>
+        <module>power-smart-site-worker</module>
+        <module>power-smart-site-device</module>
+        <module>power-smart-site-progress</module>
+        <module>power-smart-site-hazard</module>
+        <module>power-smart-site-dashboard</module>
+        <module>power-smart-site-system</module>
+        <module>power-smart-site-api</module>
+    </modules>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <spring-cloud.version>2021.0.9</spring-cloud.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <nacos.version>2021.0.1.0</nacos.version>
+        <sentinel.version>1.8.8</sentinel.version>
+        <knife4j.version>4.3.0</knife4j.version>
+        <hutool.version>5.8.25</hutool.version>
+        <influxdb-client.version>6.12.0</influxdb-client.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${nacos.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-boot-starter</artifactId><version>${mybatis-plus.version}</version></dependency>
+            <dependency><groupId>com.github.xiaoymin</groupId><artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId><version>${knife4j.version}</version></dependency>
+            <dependency><groupId>cn.hutool</groupId><artifactId>hutool-all</artifactId><version>${hutool.version}</version></dependency>
+            <dependency><groupId>com.influxdb</groupId><artifactId>influxdb-client-java</artifactId><version>${influxdb-client.version}</version></dependency>
+
+            <!-- 内部模块 -->
+            <dependency><groupId>com.powersmart</groupId><artifactId>power-smart-site-common</artifactId><version>${project.version}</version></dependency>
+            <dependency><groupId>com.powersmart</groupId><artifactId>power-smart-site-api</artifactId><version>${project.version}</version></dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

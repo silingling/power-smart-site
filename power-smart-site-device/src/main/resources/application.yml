@@ -1,0 +1,25 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: power-smart-device
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/power_smart_site?characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PWD:root}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+influxdb:
+  url: http://${INFLUXDB_HOST:127.0.0.1}:8086
+  token: ${INFLUXDB_TOKEN:admin-token}
+  org: powersmart
+  bucket: sensor_data
+
+logging:
+  level:
+    com.powersmart.device: debug

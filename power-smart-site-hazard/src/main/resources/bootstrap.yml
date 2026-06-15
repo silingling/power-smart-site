@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: power-smart-hazard
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        file-extension: yml
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}

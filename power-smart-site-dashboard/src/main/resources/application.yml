@@ -1,0 +1,14 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: power-smart-dashboard
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/power_smart_site?characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PWD:root}
+
+logging:
+  level:
+    com.powersmart.dashboard: debug

@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: power-smart-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: worker-service
+          uri: lb://power-smart-worker
+          predicates:
+            - Path=/api/v1/workers/**
+        - id: device-service
+          uri: lb://power-smart-device
+          predicates:
+            - Path=/api/v1/devices/**
+        - id: progress-service
+          uri: lb://power-smart-progress
+          predicates:
+            - Path=/api/v1/progress/**
+        - id: hazard-service
+          uri: lb://power-smart-hazard
+          predicates:
+            - Path=/api/v1/hazards/**
+        - id: dashboard-service
+          uri: lb://power-smart-dashboard
+          predicates:
+            - Path=/api/v1/dashboard/**
+        - id: system-service
+          uri: lb://power-smart-system
+          predicates:
+            - Path=/api/v1/system/**
+    discovery:
+      locator:
+        enabled: true
+  main:
+    web-application-type: reactive
+
+server:
+  port: 8080
