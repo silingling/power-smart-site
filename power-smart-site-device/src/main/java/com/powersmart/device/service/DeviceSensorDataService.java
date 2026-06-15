@@ -122,6 +122,38 @@ public class DeviceSensorDataService {
     }
 
     /**
+     * 写入传感器数据（通用字段 Map 版本）
+     * 供 MqttMessageConsumer 使用
+     */
+    public void writeSensorData(String deviceCode, String sensorType, Map<String, Object> fields) {
+        validateSafeInput(deviceCode, "deviceCode");
+
+        var point = com.influxdb.client.domain.Point
+                .measurement("device_sensor_data")
+                .addTag("device_code", deviceCode)
+                .addTag("sensor_type", sensorType)
+                .time(System.currentTimeMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+
+        // 动态添加字段
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            Object val = entry.getValue();
+            if (val instanceof Number) {
+                point.addField(entry.getKey(), ((Number) val).doubleValue());
+            } else if (val instanceof String) {
+                point.addField(entry.getKey(), (String) val);
+            } else if (val instanceof Boolean) {
+                point.addField(entry.getKey(), (Boolean) val);
+            }
+        }
+
+        try (var writeApi = influxDbClient.getWriteApi()) {
+            writeApi.writePoint(point);
+        } catch (Exception e) {
+            log.error("写入传感器数据失败 deviceCode={}, sensorType={}", deviceCode, sensorType, e);
+        }
+    }
+
+    /**
      * 校验输入: 只允许字母数字、连字符、下划线、冒号、点
      * 防止 Flux 注入
      */

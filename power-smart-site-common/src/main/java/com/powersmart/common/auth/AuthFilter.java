@@ -2,6 +2,7 @@ package com.powersmart.common.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powersmart.common.entity.Result;
+import com.powersmart.common.util.RedisUtil;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,7 +45,11 @@ public class AuthFilter {
             "/adminUser/querySystemStatus",
             "/adminUser/initUser",
             "/build/dashboard/",
-            "/api/v1/dashboard/"
+            "/api/v1/dashboard/",
+            "/api/v1/sse/subscribe",
+            "/swagger-ui",
+            "/v3/api-docs",
+            "/doc.html"
     );
 
     @Bean
@@ -67,7 +74,7 @@ public class AuthFilter {
             }
 
             String token = httpReq.getHeader("Admin-Token");
-            if (token == null || !jwtUtil.validateToken(token)) {
+            if (token == null || !jwtUtil.validateToken(token) || RedisUtil.isBlacklisted(token)) {
                 log.warn("认证失败: path={}, ip={}", path, httpReq.getRemoteAddr());
                 httpResp.setContentType("application/json;charset=UTF-8");
                 httpResp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -76,7 +83,17 @@ public class AuthFilter {
                 return;
             }
 
-            chain.doFilter(request, response);
+            // 设置安全上下文
+            Long userId = jwtUtil.getUserIdFromToken(token);
+            String username = jwtUtil.getUsernameFromToken(token);
+            List<String> permissions = jwtUtil.getPermissionsFromToken(token);
+            SecurityContext.setCurrentUser(userId, username, permissions);
+
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                SecurityContext.clear();
+            }
         });
 
         reg.addUrlPatterns("/*");

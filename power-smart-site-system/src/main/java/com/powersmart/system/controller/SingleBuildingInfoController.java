@@ -1,9 +1,8 @@
 package com.powersmart.system.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.powersmart.common.entity.Result;
 import com.powersmart.system.entity.SingleBuildingInfo;
-import com.powersmart.system.mapper.SingleBuildingInfoMapper;
+import com.powersmart.system.service.SingleBuildingInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,31 +16,27 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SingleBuildingInfoController {
 
-    private final SingleBuildingInfoMapper mapper;
+    private final SingleBuildingInfoService singleBuildingInfoService;
 
     @PostMapping("/add")
     public Result<Void> add(@RequestBody SingleBuildingInfo entity) {
-        mapper.insert(entity);
+        singleBuildingInfoService.add(entity);
         return Result.ok();
     }
 
     @PostMapping("/selectById/{id}")
     public Result<SingleBuildingInfo> selectById(@PathVariable Long id) {
-        return Result.ok(mapper.selectById(id));
+        return Result.ok(singleBuildingInfoService.selectById(id));
     }
 
     @PostMapping("/selectByProjectId/{projectId}")
     public Result<List<SingleBuildingInfo>> selectByProjectId(@PathVariable Long projectId) {
-        List<SingleBuildingInfo> list = mapper.selectList(
-                new LambdaQueryWrapper<SingleBuildingInfo>()
-                        .eq(SingleBuildingInfo::getProjectId, projectId)
-                        .orderByDesc(SingleBuildingInfo::getCreateTime));
-        return Result.ok(list);
+        return Result.ok(singleBuildingInfoService.selectByProjectId(projectId));
     }
 
     @PostMapping("/removeById/{id}")
     public Result<Void> removeById(@PathVariable Long id) {
-        mapper.deleteById(id);
+        singleBuildingInfoService.removeById(id);
         return Result.ok();
     }
 }

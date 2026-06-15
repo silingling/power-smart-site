@@ -1,18 +1,15 @@
 package com.powersmart.worker.controller;
 
-import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
 import com.powersmart.worker.entity.WorkerTeam;
-import com.powersmart.worker.mapper.WorkerTeamMapper;
+import com.powersmart.worker.service.WorkerTeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 施工班组 — 同业电力（tongye）前端 build/labourTeam/*
@@ -22,69 +19,39 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LabourTeamController {
 
-    private final WorkerTeamMapper teamMapper;
+    private final WorkerTeamService workerTeamService;
 
     @PostMapping("/list")
     public Result<PageResult<WorkerTeam>> list(@RequestBody(required = false) Map<String, Object> params) {
-        Page<WorkerTeam> page = extractPage(params);
-        LambdaQueryWrapper<WorkerTeam> wrapper = new LambdaQueryWrapper<>();
-        if (params != null) {
-            if (params.containsKey("projectId") && params.get("projectId") != null)
-                wrapper.eq(WorkerTeam::getProjectId, Long.valueOf(params.get("projectId").toString()));
-            if (params.containsKey("teamName") && params.get("teamName") != null)
-                wrapper.like(WorkerTeam::getTeamName, params.get("teamName").toString());
-        }
-        wrapper.orderByDesc(WorkerTeam::getCreatedAt);
-        return Result.ok(PageResult.from(teamMapper.selectPage(page, wrapper)));
+        Page<WorkerTeam> page = workerTeamService.queryPage(params);
+        return Result.ok(PageResult.from(page));
     }
 
     @PostMapping("/queryById/{id}")
     public Result<WorkerTeam> queryById(@PathVariable Long id) {
-        return Result.ok(teamMapper.selectById(id));
+        return Result.ok(workerTeamService.getById(id));
     }
 
     @PostMapping("/add")
     public Result<Void> add(@RequestBody WorkerTeam team) {
-        teamMapper.insert(team);
+        workerTeamService.add(team);
         return Result.ok();
     }
 
     @PostMapping("/edit")
     public Result<Void> edit(@RequestBody WorkerTeam team) {
-        teamMapper.updateById(team);
+        workerTeamService.update(team);
         return Result.ok();
     }
 
     @PostMapping("/delete/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        teamMapper.deleteById(id);
+        workerTeamService.delete(id);
         return Result.ok();
     }
 
     @PostMapping("/selcetIdsAndName")
     public Result<List<Map<String, Object>>> selcetIdsAndName(@RequestBody(required = false) Map<String, Object> params) {
-        LambdaQueryWrapper<WorkerTeam> wrapper = new LambdaQueryWrapper<>();
-        if (params != null && params.containsKey("projectId") && params.get("projectId") != null)
-            wrapper.eq(WorkerTeam::getProjectId, Long.valueOf(params.get("projectId").toString()));
-        wrapper.eq(WorkerTeam::getStatus, 1);
-        List<WorkerTeam> list = teamMapper.selectList(wrapper);
-        List<Map<String, Object>> result = list.stream().map(t -> {
-            Map<String, Object> m = new java.util.LinkedHashMap<>();
-            m.put("id", t.getId());
-            m.put("teamName", t.getTeamName());
-            return m;
-        }).collect(Collectors.toList());
-        return Result.ok(result);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Page<WorkerTeam> extractPage(Map<String, Object> params) {
-        int p = 1, s = 20;
-        if (params != null) {
-            if (params.get("page") != null) try { p = Integer.parseInt(params.get("page").toString()); } catch (NumberFormatException ignored) {}
-            if (params.get("limit") != null) try { s = Integer.parseInt(params.get("limit").toString()); } catch (NumberFormatException ignored) {}
-            if (params.get("pageSize") != null) try { s = Integer.parseInt(params.get("pageSize").toString()); } catch (NumberFormatException ignored) {}
-        }
-        return new Page<>(p, s);
+        return Result.ok(workerTeamService.selectIdsAndName(params));
     }
 }

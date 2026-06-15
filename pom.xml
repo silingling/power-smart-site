@@ -40,6 +40,9 @@
         <influxdb-client.version>6.12.0</influxdb-client.version>
     </properties>
 
+    <!-- 需要 spring-security-crypto 用于 BCrypt 密码加密 -->
+    <!-- spring-boot-starter-actuator 由各子模块按需引入 -->
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -61,6 +64,9 @@
             <dependency><groupId>com.github.xiaoymin</groupId><artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId><version>${knife4j.version}</version></dependency>
             <dependency><groupId>cn.hutool</groupId><artifactId>hutool-all</artifactId><version>${hutool.version}</version></dependency>
             <dependency><groupId>com.influxdb</groupId><artifactId>influxdb-client-java</artifactId><version>${influxdb-client.version}</version></dependency>
+            <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-crypto</artifactId></dependency>
+            <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-redis</artifactId></dependency>
+            <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
 
             <!-- 内部模块 -->
             <dependency><groupId>com.powersmart</groupId><artifactId>power-smart-site-common</artifactId><version>${project.version}</version></dependency>

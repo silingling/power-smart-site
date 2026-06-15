@@ -1,20 +1,24 @@
 package com.powersmart.system.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.powersmart.common.auth.JwtUtil;
 import com.powersmart.common.entity.PageResult;
 import com.powersmart.common.entity.Result;
-import com.powersmart.system.entity.SysDept;
-import com.powersmart.system.entity.SysUser;
-import com.powersmart.system.mapper.SysDeptMapper;
-import com.powersmart.system.mapper.SysUserMapper;
+import com.powersmart.common.util.PageHelper;
+import com.powersmart.common.util.RedisUtil;
+import com.powersmart.system.entity.*;
+import com.powersmart.system.mapper.*;
+import com.powersmart.system.service.SysRoleService;
+import com.powersmart.system.service.impl.SysMenuServiceImpl;
+import com.powersmart.system.service.impl.SysUserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 系统管理 — 登录/用户/部门/业务类型
@@ -26,6 +30,10 @@ public class AdminController {
     private final SysUserMapper userMapper;
     private final SysDeptMapper deptMapper;
     private final JwtUtil jwtUtil;
+    private final SysUserServiceImpl userService;
+    private final SysRoleService roleService;
+    private final SysMenuServiceImpl menuService;
+    private final UserRoleMapper userRoleMapper;
 
     // ==================== 登录 ====================
 
@@ -37,34 +45,48 @@ public class AdminController {
         if (StrUtil.isBlank(username) || StrUtil.isBlank(password))
             return Result.fail("用户名或密码不能为空");
 
-        SysUser user = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
-        if (user == null)
+        try {
+            SysUser user = userService.login(username, password);
+
+            if (user.getStatus() == 0)
+                return Result.fail("账号已禁用");
+
+            // 生成 JWT token（含权限列表）
+            String token = jwtUtil.generateToken(user.getId(), user.getUsername(), permissions);
+
+            // 查询角色和权限
+            List<SysRole> roles = roleService.getRolesByUserId(user.getId());
+            List<String> roleKeys = roles.stream().map(SysRole::getRoleKey).collect(Collectors.toList());
+            List<String> permissions = roleService.getUserPermissions(user.getId());
+
+            // 构建菜单树
+            List<SysMenu> userMenus = roleService.getUserMenus(user.getId());
+            List<Map<String, Object>> menuTree = menuService.buildTree(userMenus)
+                    .stream()
+                    .filter(m -> m.getMenuType() != null && m.getMenuType() <= 2)
+                    .map(this::menuToMap)
+                    .collect(Collectors.toList());
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("token", token);
+            result.put("userId", user.getId());
+            result.put("username", user.getUsername());
+            result.put("realName", user.getRealName());
+            result.put("deptParentId", "1");
+            result.put("roles", roleKeys);
+            result.put("permissions", permissions);
+            result.put("menus", menuTree);
+            return Result.ok(result);
+        } catch (Exception e) {
             return Result.fail("用户名或密码错误");
-
-        // MD5 校验（与 SysUserServiceImpl 保持一致）
-        String hashed = DigestUtil.md5Hex(password);
-
-        if (!user.getPassword().equals(hashed))
-            return Result.fail("用户名或密码错误");
-
-        if (user.getStatus() == 0)
-            return Result.fail("账号已禁用");
-
-        // 生成 JWT token
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("token", token);
-        result.put("userId", user.getId());
-        result.put("username", user.getUsername());
-        result.put("realName", user.getRealName());
-        result.put("deptParentId", "1");
-        return Result.ok(result);
+        }
     }
 
     @PostMapping("/logout")
-    public Result<Void> logout() {
+    public Result<Void> logout(@RequestHeader(value = "Admin-Token", required = false) String token) {
+        if (StrUtil.isNotBlank(token)) {
+            RedisUtil.addToBlacklist(token);
+        }
         return Result.ok();
     }
 
@@ -232,25 +254,85 @@ public class AdminController {
         return Result.ok(Map.of("url", ""));
     }
 
-    // ===== 角色管理 =====
-    @PostMapping("/adminRole/getAllRoleList")
-    public Result<List<Map<String, Object>>> getAllRoleList(@RequestBody(required = false) Map<String, Object> params) {
-        return Result.ok(new ArrayList<>());
-    }
+    // ===== 用户-角色分配 =====
+    @PostMapping("/adminUser/setUserRole")
+    public Result<Void> setUserRole(@RequestBody Map<String, Object> params) {
+        Long userId = Long.parseLong(params.getOrDefault("userId", 0).toString());
+        @SuppressWarnings("unchecked")
+        List<Integer> roleIdInts = (List<Integer>) params.getOrDefault("roleIds", new ArrayList<>());
+        List<Long> roleIds = roleIdInts.stream().map(Long::valueOf).collect(Collectors.toList());
 
-    // ===== 菜单管理 =====
-    @PostMapping("/adminMenu/queryHeaderMenuList")
-    public Result<List<Map<String, Object>>> queryHeaderMenuList(@RequestBody(required = false) Map<String, Object> params) {
-        return Result.ok(new ArrayList<>());
-    }
-
-    @PostMapping("/adminMenu/queryAllMenuList")
-    public Result<List<Map<String, Object>>> queryAllMenuList(@RequestBody(required = false) Map<String, Object> params) {
-        return Result.ok(new ArrayList<>());
-    }
-
-    @PostMapping("/adminConfig/setHeaderModelSort")
-    public Result<Void> setHeaderModelSort(@RequestBody Map<String, Object> params) {
+        // 删除旧关联
+        userRoleMapper.deleteByUserId(userId);
+        // 写入新关联
+        if (CollUtil.isNotEmpty(roleIds)) {
+            roleIds.forEach(roleId -> {
+                UserRole ur = new UserRole();
+                ur.setUserId(userId);
+                ur.setRoleId(roleId);
+                userRoleMapper.insert(ur);
+            });
+            // 同步更新 sys_user.role_ids（兼容旧代码）
+            String roleIdsStr = roleIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+            userMapper.updateById(
+                    new SysUser() {{
+                        setId(userId);
+                        setRoleIds(roleIdsStr);
+                    }});
+        }
         return Result.ok();
+    }
+
+    @PostMapping("/adminUser/getUserRole")
+    public Result<Map<String, Object>> getUserRole(@RequestBody Map<String, Object> params) {
+        Long userId = Long.parseLong(params.getOrDefault("userId", 0).toString());
+        List<Long> roleIds = userRoleMapper.selectRoleIdsByUserId(userId);
+        List<SysRole> allRoles = roleService.lambdaQuery()
+                .eq(SysRole::getStatus, 1)
+                .orderByAsc(SysRole::getSortOrder).list();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("userId", userId);
+        result.put("roleIds", roleIds);
+        result.put("allRoles", allRoles.stream().map(r -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("roleId", r.getId());
+            m.put("roleName", r.getRoleName());
+            m.put("roleKey", r.getRoleKey());
+            return m;
+        }).collect(Collectors.toList()));
+        return Result.ok(result);
+    }
+
+    // ===== 用户获取自己的菜单 + 权限 =====
+    @PostMapping("/adminUser/getUserPermissions")
+    public Result<Map<String, Object>> getUserPermissions(@RequestBody(required = false) Map<String, Object> params) {
+        // 从上下文获取当前用户（简化：从 Admin-Token 解析，暂简化）
+        // 这里假设前端会在 header 传递 userId 或由 filter 填充
+        // 后端在 Phase G 中会完善
+        return Result.ok(new LinkedHashMap<>());
+    }
+
+    // ===== 帮助方法 =====
+
+    /** SysMenu → 前端标准 Map */
+    private Map<String, Object> menuToMap(SysMenu menu) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", menu.getId());
+        m.put("parentId", menu.getParentId());
+        m.put("name", menu.getName());
+        m.put("permissionKey", menu.getPermissionKey() != null ? menu.getPermissionKey() : "");
+        m.put("path", menu.getPath() != null ? menu.getPath() : "");
+        m.put("icon", menu.getIcon() != null ? menu.getIcon() : "");
+        m.put("menuType", menu.getMenuType());
+        m.put("visible", menu.getVisible());
+        m.put("sortOrder", menu.getSortOrder());
+        if (CollUtil.isNotEmpty(menu.getChildren())) {
+            m.put("children", menu.getChildren().stream()
+                    .filter(c -> c.getMenuType() != null && c.getMenuType() <= 2)
+                    .map(this::menuToMap)
+                    .collect(Collectors.toList()));
+        }
+        return m;
     }
 }

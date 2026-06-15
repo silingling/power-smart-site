@@ -4,12 +4,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.powersmart", "com.powersmart.gateway"})
 @EnableDiscoveryClient
 public class GatewayApplication {
 

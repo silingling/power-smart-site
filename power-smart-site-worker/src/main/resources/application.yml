@@ -1,9 +1,12 @@
 server:
   port: 8081
+  shutdown: graceful
 
 spring:
   application:
     name: power-smart-worker
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/power_smart_site?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
     username: ${MYSQL_USER:root}
@@ -14,6 +17,10 @@ spring:
       minimum-idle: 5
       idle-timeout: 600000
       connection-timeout: 30000
+  redis:
+    host: ${REDIS_HOST:127.0.0.1}
+    port: 6379
+    timeout: 3000
 
 mybatis-plus:
   configuration:
@@ -21,9 +28,9 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
-      logic-delete-field: status
-      logic-delete-value: 0
-      logic-not-delete-value: 1
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 
 knife4j:
   enable: true
@@ -31,4 +38,14 @@ knife4j:
 
 logging:
   level:
+    root: info
     com.powersmart: debug
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

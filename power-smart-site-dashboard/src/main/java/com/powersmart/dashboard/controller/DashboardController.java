@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 项目看板 — /api/v1/dashboard/project/{projectId}/summary
+ *
+ * <p>安全说明：所有 SQL 使用参数化查询，禁止字符串拼接。</p>
+ */
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
@@ -20,31 +25,31 @@ public class DashboardController {
         Map<String, Object> summary = new HashMap<>();
 
         // 人员统计
-        summary.put("totalWorkers", queryCount("worker", projectId));
-        summary.put("activeWorkers", queryCountWhere("worker", "status=1", projectId));
+        summary.put("totalWorkers", queryCount("SELECT COUNT(*) FROM worker WHERE project_id=?", projectId));
+        summary.put("activeWorkers", queryCount("SELECT COUNT(*) FROM worker WHERE project_id=? AND status=1", projectId));
+
+        // 隐患统计
+        summary.put("totalHazards", queryCount("SELECT COUNT(*) FROM hazard_report WHERE project_id=?", projectId));
+        summary.put("openHazards", queryCount("SELECT COUNT(*) FROM hazard_report WHERE project_id=? AND status IN (1,2)", projectId));
+        summary.put("closedHazards", queryCount("SELECT COUNT(*) FROM hazard_report WHERE project_id=? AND status IN (3,4)", projectId));
         summary.put("todayViolations", queryCount("SELECT COUNT(*) FROM hazard_report WHERE project_id=? AND report_type=1 AND DATE(created_at)=CURDATE()", projectId));
 
         // 设备统计
-        summary.put("totalDevices", queryCount("device", projectId));
-        summary.put("onlineDevices", queryCountWhere("device", "status=2", projectId));
-        summary.put("alarmDevices", queryCountWhere("device", "status=3", projectId));
+        summary.put("totalDevices", queryCount("SELECT COUNT(*) FROM device WHERE project_id=?", projectId));
+        summary.put("onlineDevices", queryCount("SELECT COUNT(*) FROM device WHERE project_id=? AND status='online'", projectId));
+        summary.put("alarmDevices", queryCount("SELECT COUNT(*) FROM device_alarm WHERE project_id=? AND status='active'", projectId));
 
         // 进度统计
-        summary.put("delayTasks", queryCount("SELECT COUNT(*) FROM progress_task WHERE project_id=? AND status=3", projectId));
+        summary.put("delayTasks", queryCount("SELECT COUNT(*) FROM progress_task WHERE project_id=? AND status='delayed'", projectId));
+        summary.put("totalTasks", queryCount("SELECT COUNT(*) FROM progress_task WHERE project_id=?", projectId));
 
-        // 隐患统计
-        summary.put("openHazards", queryCountWhere("hazard_report", "status IN (1,2)", projectId));
-        summary.put("closedHazards", queryCountWhere("hazard_report", "status IN (3,4)", projectId));
+        // 围栏告警（如有）
+        summary.put("fenceAlerts", queryCount("SELECT COUNT(*) FROM fence_alert_event WHERE project_id=? AND status='pending'", projectId));
+
+        // 特种作业票（如有）
+        summary.put("activePermits", queryCount("SELECT COUNT(*) FROM special_work_permit WHERE project_id=? AND status='active'", projectId));
 
         return Result.ok(summary);
-    }
-
-    private long queryCount(String table, Long projectId) {
-        return queryCount("SELECT COUNT(*) FROM " + table + " WHERE project_id=?", projectId);
-    }
-
-    private long queryCountWhere(String table, String where, Long projectId) {
-        return queryCount("SELECT COUNT(*) FROM " + table + " WHERE project_id=? AND " + where, projectId);
     }
 
     private long queryCount(String sql, Long projectId) {

@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * JWT 工具类
@@ -35,34 +37,63 @@ public class JwtUtil {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** 生成 JWT token */
-    public String generateToken(Long userId, String username) {
+    /** 生成 JWT token（含权限列表） */
+    public String generateToken(Long userId, String username, List<String> permissions) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("username", username)
+                .claim("permissions", permissions != null ? permissions : Collections.emptyList())
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + TOKEN_VALIDITY_MS))
                 .signWith(secretKey)
                 .compact();
     }
 
+    /** 生成 JWT token（无权限时向后兼容的重载） */
+    public String generateToken(Long userId, String username) {
+        return generateToken(userId, username, Collections.emptyList());
+    }
+
     /** 从 token 解析用户 ID */
     public Long getUserIdFromToken(String token) {
         try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            return Long.parseLong(claims.getSubject());
+            return Long.parseLong(getClaims(token).getSubject());
         } catch (Exception e) {
             return null;
         }
     }
 
+    /** 从 token 解析用户名 */
+    public String getUsernameFromToken(String token) {
+        try {
+            return getClaims(token).get("username", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 解析 Claims */
+    private Claims getClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
     /** 校验 token 是否有效 */
     public boolean validateToken(String token) {
         return getUserIdFromToken(token) != null;
+    }
+
+    /** 从 token 中提取权限列表 */
+    @SuppressWarnings("unchecked")
+    public List<String> getPermissionsFromToken(String token) {
+        try {
+            return getClaims(token).get("permissions", List.class);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 }
