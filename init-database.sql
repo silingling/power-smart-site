@@ -246,7 +246,9 @@ CREATE TABLE construction_area (
   responsible_person_id bigint DEFAULT NULL,
   responsible_team_id bigint DEFAULT NULL,
   status tinyint DEFAULT '1' COMMENT '1-启用 0-禁用',
+  is_deleted tinyint DEFAULT '0',
   created_at datetime DEFAULT CURRENT_TIMESTAMP,
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_project (project_id)
 ) ENGINE=InnoDB COMMENT='作业区域（电子围栏）';
@@ -260,6 +262,7 @@ CREATE TABLE ai_violation (
   confidence double DEFAULT NULL COMMENT '识别置信度',
   snapshot_url varchar(500) DEFAULT NULL COMMENT '抓拍图片',
   video_url varchar(500) DEFAULT NULL COMMENT '违规视频',
+  callback_id bigint DEFAULT NULL COMMENT '关联AI回调记录ID',
   worker_id bigint DEFAULT NULL COMMENT '关联人员',
   status tinyint DEFAULT '0' COMMENT '0-未处理 1-已确认 2-误报',
   handled_by bigint DEFAULT NULL,
@@ -1023,10 +1026,10 @@ CREATE TABLE IF NOT EXISTS special_work_permit (
     applicant_id BIGINT COMMENT '申请人ID',
     applicant_name VARCHAR(50) COMMENT '申请人姓名',
     applicant_dept VARCHAR(100) COMMENT '申请部门',
-    监护人_id BIGINT COMMENT '监护人ID',
-    监护人_name VARCHAR(50) COMMENT '监护人姓名',
-    负责人_id BIGINT COMMENT '作业负责人ID',
-    负责人_name VARCHAR(50) COMMENT '作业负责人姓名',
+    guardian_id BIGINT COMMENT '监护人ID',
+    guardian_name VARCHAR(50) COMMENT '监护人姓名',
+    principal_id BIGINT COMMENT '作业负责人ID',
+    principal_name VARCHAR(50) COMMENT '作业负责人姓名',
     status VARCHAR(20) DEFAULT 'draft' COMMENT '状态: draft/submitted/safety_review/approved/active/completed/closed/rejected/cancelled',
     current_node VARCHAR(50) COMMENT '当前审批节点',
     reject_reason TEXT COMMENT '驳回/作废原因',
@@ -1249,3 +1252,676 @@ SELECT id, 'PMS同步', 'system:pmsSync', '/system/pmsSync', 'sync', 2, 10
 FROM sys_menu WHERE name = '系统管理' AND NOT EXISTS (
     SELECT 1 FROM sys_menu WHERE permission_key = 'system:pmsSync'
 );
+
+-- =============================================================
+-- Phase 5G: AI摄像头管理
+-- =============================================================
+CREATE TABLE IF NOT EXISTS ai_camera (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '项目ID',
+    camera_name VARCHAR(100) NOT NULL COMMENT '摄像头名称',
+    camera_code VARCHAR(100) COMMENT '设备编码',
+    camera_type VARCHAR(30) DEFAULT 'fixed' COMMENT 'fixed/ptz/panoramic',
+    stream_url VARCHAR(500) COMMENT 'RTSP/HLS流地址',
+    snapshot_url VARCHAR(500) COMMENT '抓拍快照URL',
+    longitude DECIMAL(11,8) COMMENT '经度',
+    latitude DECIMAL(10,8) COMMENT '纬度',
+    location_desc VARCHAR(200) COMMENT '安装位置描述',
+    direction VARCHAR(20) COMMENT '监控方向',
+    ai_enabled TINYINT DEFAULT 1 COMMENT '1-启用AI识别 0-禁用',
+    detection_zones TEXT COMMENT '检测区域(JSON坐标数组)',
+    status VARCHAR(20) DEFAULT 'offline' COMMENT 'online/offline/disabled',
+    last_heartbeat DATETIME COMMENT '最后心跳时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI摄像头管理';
+
+-- AI抓拍记录
+CREATE TABLE IF NOT EXISTS ai_snapshot (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    camera_id BIGINT NOT NULL COMMENT '摄像头ID',
+    project_id BIGINT NOT NULL COMMENT '项目ID',
+    snapshot_url VARCHAR(500) NOT NULL COMMENT '抓拍图片URL',
+    snapshot_time DATETIME NOT NULL COMMENT '抓拍时间',
+    thumbnail_url VARCHAR(500) COMMENT '缩略图URL',
+    file_size INT DEFAULT 0 COMMENT '文件大小(bytes)',
+    width INT DEFAULT 0 COMMENT '图片宽度',
+    height INT DEFAULT 0 COMMENT '图片高度',
+    storage_type VARCHAR(20) DEFAULT 'local' COMMENT 'local/oss/s3',
+    expired_at DATETIME COMMENT '过期自动清理时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_camera_time (camera_id, snapshot_time),
+    INDEX idx_project (project_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI抓拍记录';
+
+-- AI检测结果推送回调记录
+CREATE TABLE IF NOT EXISTS ai_detection_callback (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    callback_id VARCHAR(100) COMMENT '回调唯一ID(第三方)',
+    project_id BIGINT NOT NULL COMMENT '项目ID',
+    camera_id BIGINT COMMENT '摄像头ID',
+    violation_type VARCHAR(50) COMMENT '违规类型',
+    confidence DOUBLE DEFAULT 0 COMMENT '置信度',
+    snapshot_url VARCHAR(500) COMMENT '抓拍图',
+    video_url VARCHAR(500) COMMENT '短视频',
+    callback_raw TEXT COMMENT '原始回调JSON',
+    matched_rule VARCHAR(100) COMMENT '匹配规则',
+    processed TINYINT DEFAULT 0 COMMENT '0-待处理 1-已处理',
+    hazard_id BIGINT COMMENT '关联隐患ID',
+    error_msg VARCHAR(500) COMMENT '处理错误信息',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_processed (processed),
+    INDEX idx_callback_id (callback_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI检测回调记录';
+
+-- =============================================================
+-- Phase 5G: 报表导出引擎
+-- =============================================================
+CREATE TABLE IF NOT EXISTS report_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    template_name VARCHAR(100) NOT NULL COMMENT '模板名称',
+    template_key VARCHAR(100) NOT NULL COMMENT '模板标识',
+    description VARCHAR(500) COMMENT '模板说明',
+    module VARCHAR(50) NOT NULL COMMENT '所属模块',
+    export_type VARCHAR(20) DEFAULT 'excel' COMMENT 'excel/csv/pdf',
+    columns_config TEXT NOT NULL COMMENT '列定义(JSON)',
+    query_config TEXT COMMENT '查询配置(JSON)',
+    header_template TEXT COMMENT '表头模板',
+    footer_template TEXT COMMENT '表尾模板',
+    enabled TINYINT DEFAULT 1,
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_template_key (template_key),
+    INDEX idx_module (module)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='报表模板定义';
+
+CREATE TABLE IF NOT EXISTS report_export_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    template_id BIGINT COMMENT '模板ID',
+    template_name VARCHAR(100) COMMENT '模板名称',
+    project_id BIGINT COMMENT '项目ID',
+    operator_id BIGINT COMMENT '操作人ID',
+    operator_name VARCHAR(50) COMMENT '操作人姓名',
+    query_params TEXT COMMENT '查询参数(JSON)',
+    file_name VARCHAR(200) COMMENT '导出文件名',
+    file_url VARCHAR(500) COMMENT '文件路径/URL',
+    file_size BIGINT DEFAULT 0 COMMENT '文件大小(bytes)',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/processing/completed/failed',
+    error_msg VARCHAR(500) COMMENT '失败原因',
+    row_count INT DEFAULT 0 COMMENT '导出行数',
+    started_at DATETIME COMMENT '开始处理时间',
+    completed_at DATETIME COMMENT '完成时间',
+    expires_at DATETIME COMMENT '过期自动清理时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_operator (operator_id),
+    INDEX idx_status (status),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='报表导出任务';
+
+-- 默认报表模板种子数据
+INSERT IGNORE INTO report_template (template_name, template_key, module, export_type, columns_config, query_config) VALUES
+('隐患台账', 'hazard_ledger', 'hazard', 'excel',
+ '[{"key":"id","title":"编号","width":10},{"key":"hazardType","title":"隐患类型","width":20},{"key":"hazardLevel","title":"隐患等级","width":15},{"key":"status","title":"状态","width":12},{"key":"createdAt","title":"上报时间","width":20}]',
+ '{"entity":"hazard_report","defaultOrder":"created_at DESC"}'),
+('人员花名册', 'worker_roster', 'worker', 'excel',
+ '[{"key":"name","title":"姓名","width":15},{"key":"idCard","title":"身份证号","width":25},{"key":"phone","title":"联系电话","width":18},{"key":"workType","title":"工种","width":15},{"key":"teamName","title":"班组","width":20},{"key":"entryDate","title":"入场日期","width":15}]',
+ '{"entity":"worker","defaultOrder":"entry_date DESC"}'),
+('设备清单', 'device_inventory', 'device', 'excel',
+ '[{"key":"deviceName","title":"设备名称","width":25},{"key":"deviceCode","title":"设备编码","width":20},{"key":"deviceType","title":"设备类型","width":15},{"key":"status","title":"状态","width":12},{"key":"installDate","title":"安装日期","width":15}]',
+ '{"entity":"device","defaultOrder":"install_date DESC"}'),
+('告警统计', 'alarm_statistics', 'device', 'excel',
+ '[{"key":"alarmType","title":"告警类型","width":20},{"key":"alarmLevel","title":"告警等级","width":12},{"key":"deviceName","title":"设备","width":25},{"key":"alarmValue","title":"告警值","width":15},{"key":"createTime","title":"告警时间","width":20},{"key":"status","title":"处理状态","width":12}]',
+ '{"entity":"device_alarm","defaultOrder":"create_time DESC"}');
+
+-- =============================================================
+-- Phase 5H: 应急管理
+-- =============================================================
+
+-- 应急预案
+CREATE TABLE IF NOT EXISTS emergency_plan (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    plan_name VARCHAR(200) NOT NULL COMMENT '预案名称',
+    plan_type VARCHAR(30) NOT NULL COMMENT '预案类型: fire/accident/natural_disaster/chemical_leak/epidemic/other',
+    emergency_level VARCHAR(20) DEFAULT 'general' COMMENT '应急等级: general/major/special',
+    description TEXT COMMENT '预案描述',
+    procedures TEXT COMMENT '处置流程(JSON步骤)',
+    responsible_person VARCHAR(100) COMMENT '责任人',
+    responsible_phone VARCHAR(20) COMMENT '责任人电话',
+    responsible_dept VARCHAR(100) COMMENT '责任部门',
+    drill_required TINYINT DEFAULT 1 COMMENT '是否需要演练: 1是 0否',
+    drill_frequency VARCHAR(50) COMMENT '演练频率: monthly/quarterly/yearly',
+    attachment_json TEXT COMMENT '附件列表JSON',
+    status VARCHAR(20) DEFAULT 'active' COMMENT 'active/archived',
+    created_by VARCHAR(50) COMMENT '创建人',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_type (plan_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应急预案';
+
+-- 应急演练记录
+CREATE TABLE IF NOT EXISTS emergency_drill (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    plan_id BIGINT COMMENT '关联预案ID',
+    drill_name VARCHAR(200) NOT NULL COMMENT '演练名称',
+    drill_type VARCHAR(30) NOT NULL COMMENT '演练类型: fire_fighting/evacuation/medical/first_aid/chemical_leak/other',
+    drill_date DATE NOT NULL COMMENT '演练日期',
+    drill_time TIME COMMENT '演练时间',
+    duration_minutes INT DEFAULT 0 COMMENT '演练时长(分钟)',
+    location VARCHAR(200) COMMENT '演练地点',
+    participants_count INT DEFAULT 0 COMMENT '参与人数',
+    organizer VARCHAR(100) COMMENT '组织人',
+    content TEXT COMMENT '演练内容',
+    evaluation TEXT COMMENT '演练评价',
+    deficiencies TEXT COMMENT '存在的不足',
+    improvement_measures TEXT COMMENT '改进措施',
+    attachment_json TEXT COMMENT '附件JSON(图片)',
+    result VARCHAR(20) DEFAULT 'completed' COMMENT '结果: completed/failed/partial',
+    created_by VARCHAR(50) COMMENT '创建人',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_plan (plan_id),
+    INDEX idx_date (drill_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应急演练记录';
+
+-- 应急物资
+CREATE TABLE IF NOT EXISTS emergency_supply (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    supply_name VARCHAR(200) NOT NULL COMMENT '物资名称',
+    supply_type VARCHAR(30) NOT NULL COMMENT '物资分类: fire_fighting/medical/rescue/communication/protective/lighting/other',
+    specification VARCHAR(200) COMMENT '规格型号',
+    unit VARCHAR(20) COMMENT '计量单位: 个/套/台/箱/瓶',
+    quantity INT DEFAULT 0 COMMENT '当前库存数量',
+    min_quantity INT DEFAULT 0 COMMENT '最低库存预警数量',
+    location VARCHAR(200) COMMENT '存放位置',
+    storage_condition VARCHAR(200) COMMENT '存储条件',
+    expiry_date DATE COMMENT '有效期限',
+    supplier VARCHAR(200) COMMENT '供应商',
+    contact_phone VARCHAR(20) COMMENT '供应商联系电话',
+    remark TEXT COMMENT '备注',
+    status VARCHAR(20) DEFAULT 'normal' COMMENT 'normal/low_stock/out_of_stock/expired',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_type (supply_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应急物资';
+
+-- 物资出入库记录
+CREATE TABLE IF NOT EXISTS emergency_supply_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    supply_id BIGINT NOT NULL COMMENT '物资ID',
+    record_type VARCHAR(10) NOT NULL COMMENT 'in/out 入库/出库',
+    quantity INT NOT NULL COMMENT '数量',
+    operator VARCHAR(100) COMMENT '操作人',
+    operation_time DATETIME COMMENT '操作时间',
+    reason VARCHAR(500) COMMENT '出入库原因',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_supply (supply_id),
+    INDEX idx_type (record_type),
+    INDEX idx_project (project_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应急物资出入库记录';
+
+-- 事故报告
+CREATE TABLE IF NOT EXISTS emergency_incident (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    incident_code VARCHAR(50) NOT NULL COMMENT '事故编号',
+    incident_name VARCHAR(200) NOT NULL COMMENT '事故名称',
+    incident_type VARCHAR(30) NOT NULL COMMENT '事故类型: injury/death/fire/equipment_damage/structural_failure/chemical_leak/other',
+    incident_level VARCHAR(20) DEFAULT 'general' COMMENT '事故等级: general/major/significant/special',
+    happened_at DATETIME NOT NULL COMMENT '发生时间',
+    location VARCHAR(200) COMMENT '发生地点',
+    description TEXT COMMENT '事故描述',
+    casualties INT DEFAULT 0 COMMENT '伤亡人数',
+    deaths INT DEFAULT 0 COMMENT '死亡人数',
+    direct_loss DECIMAL(14,2) DEFAULT 0.00 COMMENT '直接经济损失(元)',
+    indirect_loss DECIMAL(14,2) DEFAULT 0.00 COMMENT '间接经济损失(元)',
+    preliminary_cause TEXT COMMENT '初步原因分析',
+    investigation_report TEXT COMMENT '调查报告',
+    corrective_actions TEXT COMMENT '整改措施(JSON)',
+    corrective_status VARCHAR(20) DEFAULT 'pending' COMMENT '整改状态: pending/in_progress/completed',
+    reporter VARCHAR(100) COMMENT '报告人',
+    report_time DATETIME COMMENT '报告时间',
+    attachment_json TEXT COMMENT '附件JSON',
+    status VARCHAR(20) DEFAULT 'reported' COMMENT '状态: reported/investigating/resolved/closed',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_type (incident_type),
+    INDEX idx_level (incident_level),
+    INDEX idx_status (status),
+    INDEX idx_code (incident_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='事故报告';
+
+-- 应急通讯录
+CREATE TABLE IF NOT EXISTS emergency_contact (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    contact_name VARCHAR(100) NOT NULL COMMENT '姓名',
+    contact_role VARCHAR(50) NOT NULL COMMENT '角色: commander/deputy_commander/member/liaison/doctor',
+    organization VARCHAR(200) COMMENT '所属单位',
+    department VARCHAR(100) COMMENT '部门',
+    position VARCHAR(100) COMMENT '职务',
+    phone VARCHAR(20) COMMENT '手机号码',
+    landline VARCHAR(20) COMMENT '固定电话',
+    email VARCHAR(100) COMMENT '电子邮箱',
+    duty VARCHAR(200) COMMENT '应急职责',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    status VARCHAR(20) DEFAULT 'active' COMMENT 'active/inactive',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_role (contact_role),
+    INDEX idx_phone (phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应急通讯录';
+
+-- =============================================================
+-- Phase 5B: 消息通知中心增强
+-- =============================================================
+
+-- 通知模板
+CREATE TABLE IF NOT EXISTS notification_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    template_name VARCHAR(100) NOT NULL COMMENT '模板名称',
+    template_key VARCHAR(100) NOT NULL COMMENT '模板标识(unique)',
+    biz_type VARCHAR(50) NOT NULL COMMENT '业务类型',
+    channel VARCHAR(50) COMMENT '默认推送渠道',
+    title_template VARCHAR(500) COMMENT '标题模板(支持{var})',
+    content_template TEXT COMMENT '内容模板(支持{var})',
+    variables TEXT COMMENT '变量定义(JSON)',
+    enabled TINYINT DEFAULT 1 COMMENT '1启用 0禁用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_template_key (template_key),
+    INDEX idx_biz_type (biz_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知模板';
+
+-- 用户通知订阅规则
+CREATE TABLE IF NOT EXISTS notification_subscription (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    biz_type VARCHAR(50) NOT NULL COMMENT '业务类型',
+    channels VARCHAR(200) COMMENT '订阅渠道(JSON数组或逗号分隔)',
+    min_level VARCHAR(20) DEFAULT 'info' COMMENT '最低接收级别: info/warning/critical',
+    quiet_period_minutes INT DEFAULT 0 COMMENT '静默期(分钟)',
+    enabled TINYINT DEFAULT 1 COMMENT '1启用 0禁用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_biz_type (biz_type),
+    UNIQUE KEY uk_user_biz (user_id, biz_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知订阅规则';
+
+-- 通知渠道配置
+CREATE TABLE IF NOT EXISTS notification_channel_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    channel VARCHAR(50) NOT NULL COMMENT '渠道: sms/email/feishu',
+    config_key VARCHAR(100) NOT NULL COMMENT '配置键',
+    config_value TEXT COMMENT '配置值(敏感信息应加密)',
+    enabled TINYINT DEFAULT 1 COMMENT '1启用 0禁用',
+    description VARCHAR(500) COMMENT '配置说明',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_channel (channel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知渠道配置';
+
+-- 通知投递记录
+CREATE TABLE IF NOT EXISTS notification_delivery (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    notification_id BIGINT COMMENT '通知ID(站内信)',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    channel VARCHAR(50) NOT NULL COMMENT '推送渠道',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/sent/failed',
+    sent_at DATETIME COMMENT '发送时间',
+    error_msg VARCHAR(500) COMMENT '错误信息',
+    retry_count INT DEFAULT 0 COMMENT '重试次数',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_channel (channel),
+    INDEX idx_status (status),
+    INDEX idx_notification (notification_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知投递记录';
+
+-- 默认通知模板种子数据
+INSERT IGNORE INTO notification_template (template_name, template_key, biz_type, channel, title_template, content_template) VALUES
+('隐患审批通知', 'hazard_approval', 'hazard_approval', 'in_app,sms', '隐患审批通知', '您的隐患报告#{bizId}需要审批，当前状态: {status}'),
+('设备告警通知', 'device_alarm', 'device_alarm', 'in_app', '设备告警通知', '设备 {deviceName} 发生 {alarmType} 告警，当前值: {alarmValue}'),
+('AI检测告警', 'ai_detection', 'ai_detection', 'in_app,feishu', 'AI违规检测', '摄像头 {cameraName} 检测到违规: {violationType} (置信度{confidence}%)'),
+('工单超时提醒', 'work_order_overdue', 'work_order', 'in_app,sms', '工单超时提醒', '工单 #{workOrderId} 已超时 {overdueHours}小时，请及时处理'),
+('事故上报通知', 'incident_reported', 'incident', 'in_app,sms,feishu', '事故上报', '{incidentName} 已上报，等级: {incidentLevel}');
+
+-- =============================================================
+-- Phase 5C: 智能巡检管理
+-- =============================================================
+
+-- 巡检计划
+CREATE TABLE IF NOT EXISTS inspection_plan (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    plan_name VARCHAR(200) NOT NULL COMMENT '计划名称',
+    plan_type VARCHAR(30) NOT NULL COMMENT '类型: daily/weekly/monthly/irregular',
+    route_name VARCHAR(200) COMMENT '路线名称',
+    route_json TEXT COMMENT '路线点位JSON',
+    total_points INT DEFAULT 0 COMMENT '点位总数',
+    frequency VARCHAR(50) COMMENT '执行频率配置',
+    start_date DATE COMMENT '开始日期',
+    end_date DATE COMMENT '结束日期',
+    assigned_to BIGINT COMMENT '负责人ID',
+    assignee_name VARCHAR(100) COMMENT '负责人姓名',
+    description TEXT COMMENT '计划描述',
+    status VARCHAR(20) DEFAULT 'active' COMMENT 'active/paused/completed',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_type (plan_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='巡检计划';
+
+-- 巡检模板
+CREATE TABLE IF NOT EXISTS inspection_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    template_name VARCHAR(200) NOT NULL COMMENT '模板名称',
+    template_type VARCHAR(50) COMMENT '模板类型',
+    check_items TEXT COMMENT '检查项JSON [{item, type, required}]',
+    enabled TINYINT DEFAULT 1 COMMENT '1启用 0禁用',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='巡检模板';
+
+-- 巡检任务
+CREATE TABLE IF NOT EXISTS inspection_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    plan_id BIGINT COMMENT '关联计划ID',
+    template_id BIGINT COMMENT '关联模板ID',
+    task_code VARCHAR(50) NOT NULL COMMENT '任务编号',
+    task_name VARCHAR(200) COMMENT '任务名称',
+    assignee_id BIGINT COMMENT '分配人ID',
+    assignee_name VARCHAR(100) COMMENT '分配人姓名',
+    scheduled_date DATE COMMENT '计划日期',
+    deadline DATETIME COMMENT '截止时间',
+    completed_at DATETIME COMMENT '完成时间',
+    total_points INT DEFAULT 0 COMMENT '总点位',
+    completed_points INT DEFAULT 0 COMMENT '已完成点位',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/in_progress/completed/overdue',
+    start_time DATETIME COMMENT '开始时间',
+    end_time DATETIME COMMENT '结束时间',
+    result VARCHAR(20) COMMENT 'pass/conditional_pass/fail',
+    remark TEXT COMMENT '备注',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_plan (plan_id),
+    INDEX idx_assignee (assignee_id),
+    INDEX idx_status (status),
+    INDEX idx_code (task_code),
+    INDEX idx_date (scheduled_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='巡检任务';
+
+-- 巡检记录
+CREATE TABLE IF NOT EXISTS inspection_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT NOT NULL COMMENT '关联任务ID',
+    point_index INT DEFAULT 0 COMMENT '点位序号',
+    point_name VARCHAR(200) COMMENT '点位名称',
+    check_item VARCHAR(200) COMMENT '检查项',
+    check_result VARCHAR(20) COMMENT 'pass/fail/na',
+    actual_value VARCHAR(200) COMMENT '实际值',
+    description TEXT COMMENT '描述',
+    photo_json TEXT COMMENT '图片JSON',
+    issue_id BIGINT COMMENT '关联问题ID',
+    inspector_id BIGINT COMMENT '检查人ID',
+    inspector_name VARCHAR(100) COMMENT '检查人姓名',
+    check_time DATETIME COMMENT '检查时间',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_task (task_id),
+    INDEX idx_inspector (inspector_id),
+    INDEX idx_result (check_result)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='巡检记录';
+
+-- 巡检问题
+CREATE TABLE IF NOT EXISTS inspection_issue (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT COMMENT '关联任务ID',
+    record_id BIGINT COMMENT '关联记录ID',
+    issue_desc TEXT NOT NULL COMMENT '问题描述',
+    issue_type VARCHAR(50) COMMENT '问题类型',
+    issue_level VARCHAR(20) DEFAULT 'general' COMMENT 'general/major/critical',
+    photo_json TEXT COMMENT '图片JSON',
+    location VARCHAR(200) COMMENT '位置',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending/rectifying/resolved/verified',
+    handler_id BIGINT COMMENT '处理人ID',
+    handler_name VARCHAR(100) COMMENT '处理人姓名',
+    handled_at DATETIME COMMENT '处理时间',
+    handle_measure TEXT COMMENT '处理措施',
+    verifier_id BIGINT COMMENT '验收人ID',
+    verifier_name VARCHAR(100) COMMENT '验收人姓名',
+    verified_at DATETIME COMMENT '验收时间',
+    hazard_report_id BIGINT COMMENT '关联隐患报告ID',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_task (task_id),
+    INDEX idx_level (issue_level),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='巡检问题';
+
+-- =============================================================
+-- Phase 5D: 施工日志/安全日志 + 电子签名
+-- =============================================================
+
+-- 施工日志
+CREATE TABLE IF NOT EXISTS construction_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    log_date DATE NOT NULL COMMENT '日志日期',
+    weather VARCHAR(50) COMMENT '天气',
+    temperature VARCHAR(20) COMMENT '温度',
+    construction_content TEXT COMMENT '施工内容',
+    team_status TEXT COMMENT '班组情况',
+    material_usage TEXT COMMENT '材料使用',
+    equipment_usage TEXT COMMENT '设备使用',
+    issues TEXT COMMENT '存在问题',
+    solutions TEXT COMMENT '解决措施',
+    tomorrow_plan TEXT COMMENT '明日计划',
+    recorder VARCHAR(50) COMMENT '记录人',
+    recorder_name VARCHAR(100) COMMENT '记录人姓名',
+    signatory_id BIGINT COMMENT '签认人ID',
+    signatory_name VARCHAR(100) COMMENT '签认人姓名',
+    signed_at DATETIME COMMENT '签认时间',
+    status VARCHAR(20) DEFAULT 'draft' COMMENT 'draft/submitted/approved',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_date (log_date),
+    INDEX idx_status (status),
+    INDEX idx_recorder (recorder)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='施工日志';
+
+-- 安全日志
+CREATE TABLE IF NOT EXISTS safety_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    log_date DATE NOT NULL COMMENT '日志日期',
+    weather VARCHAR(50) COMMENT '天气',
+    safety_education TEXT COMMENT '安全教育情况',
+    hazard_check TEXT COMMENT '安全隐患排查',
+    rectification_status TEXT COMMENT '整改落实情况',
+    violations TEXT COMMENT '违章情况',
+    safety_measures TEXT COMMENT '安全措施',
+    recorder VARCHAR(50) COMMENT '记录人',
+    recorder_name VARCHAR(100) COMMENT '记录人姓名',
+    signatory_id BIGINT COMMENT '签认人ID',
+    signatory_name VARCHAR(100) COMMENT '签认人姓名',
+    signed_at DATETIME COMMENT '签认时间',
+    status VARCHAR(20) DEFAULT 'draft' COMMENT 'draft/submitted/approved',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_date (log_date),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全日志';
+
+-- 日志模板
+CREATE TABLE IF NOT EXISTS log_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    template_name VARCHAR(200) NOT NULL COMMENT '模板名称',
+    log_type VARCHAR(30) NOT NULL COMMENT '类型: construction/safety',
+    template_content TEXT COMMENT '模板内容(JSON)',
+    enabled TINYINT DEFAULT 1 COMMENT '1启用 0禁用',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_type (log_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='日志模板';
+
+-- 电子签名
+CREATE TABLE IF NOT EXISTS electronic_signature (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT COMMENT '所属项目ID',
+    biz_type VARCHAR(30) NOT NULL COMMENT '业务类型: log/permit/report',
+    biz_id BIGINT NOT NULL COMMENT '业务记录ID',
+    signer_id BIGINT NOT NULL COMMENT '签认人ID',
+    signer_name VARCHAR(100) COMMENT '签认人姓名',
+    signer_role VARCHAR(50) COMMENT '签认人角色',
+    signed_at DATETIME COMMENT '签认时间',
+    signature_image TEXT COMMENT '签名图片(base64或URL)',
+    ip_address VARCHAR(50) COMMENT '签认IP',
+    user_agent VARCHAR(500) COMMENT '浏览器UA',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_biz (biz_type, biz_id),
+    INDEX idx_signer (signer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='电子签名记录';
+
+-- =============================================================
+-- Phase 5E: 物资/材料管理
+-- =============================================================
+
+-- 物料分类
+CREATE TABLE IF NOT EXISTS material_category (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    category_name VARCHAR(100) NOT NULL COMMENT '分类名称',
+    parent_id BIGINT DEFAULT 0 COMMENT '父分类ID(0=根)',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    description VARCHAR(500) COMMENT '描述',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_parent (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物料分类';
+
+-- 物料档案(含库存)
+CREATE TABLE IF NOT EXISTS material_info (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    category_id BIGINT COMMENT '分类ID',
+    material_code VARCHAR(50) NOT NULL COMMENT '物料编号',
+    material_name VARCHAR(200) NOT NULL COMMENT '物料名称',
+    specification VARCHAR(200) COMMENT '规格型号',
+    unit VARCHAR(20) COMMENT '计量单位',
+    unit_price DECIMAL(12,2) DEFAULT 0.00 COMMENT '单价(元)',
+    current_quantity INT DEFAULT 0 COMMENT '当前库存数量',
+    min_quantity INT DEFAULT 0 COMMENT '最低库存预警',
+    location VARCHAR(200) COMMENT '存放位置',
+    supplier VARCHAR(200) COMMENT '供应商',
+    contact_phone VARCHAR(20) COMMENT '联系电话',
+    remark TEXT COMMENT '备注',
+    status VARCHAR(20) DEFAULT 'normal' COMMENT 'normal/out_of_stock/discontinued',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_material_code (material_code),
+    INDEX idx_project (project_id),
+    INDEX idx_category (category_id),
+    INDEX idx_status (status),
+    INDEX idx_name (material_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物料档案';
+
+-- 出入库记录
+CREATE TABLE IF NOT EXISTS material_stock_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    material_id BIGINT NOT NULL COMMENT '物料ID',
+    record_type VARCHAR(10) NOT NULL COMMENT 'in/out/return',
+    quantity INT NOT NULL COMMENT '数量',
+    unit_price DECIMAL(12,2) COMMENT '单价',
+    total_amount DECIMAL(14,2) COMMENT '金额小计',
+    operator VARCHAR(100) COMMENT '操作人',
+    operation_time DATETIME COMMENT '操作时间',
+    related_biz VARCHAR(50) COMMENT '关联业务: purchase/return/consumption/transfer',
+    biz_order_no VARCHAR(100) COMMENT '业务单号',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_material (material_id),
+    INDEX idx_type (record_type),
+    INDEX idx_project (project_id),
+    INDEX idx_time (operation_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='出入库记录';
+
+-- 盘点记录
+CREATE TABLE IF NOT EXISTS material_check (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id BIGINT NOT NULL COMMENT '所属项目ID',
+    check_date DATE NOT NULL COMMENT '盘点日期',
+    check_name VARCHAR(200) COMMENT '盘点名称',
+    handler BIGINT COMMENT '经办人ID',
+    handler_name VARCHAR(100) COMMENT '经办人姓名',
+    remark TEXT COMMENT '备注',
+    status VARCHAR(20) DEFAULT 'draft' COMMENT 'draft/submitted/approved',
+    is_deleted TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_date (check_date),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='盘点记录';
+
+-- 盘点明细
+CREATE TABLE IF NOT EXISTS material_check_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    check_id BIGINT NOT NULL COMMENT '盘点ID',
+    material_id BIGINT NOT NULL COMMENT '物料ID',
+    material_name VARCHAR(200) COMMENT '物料名称',
+    specification VARCHAR(200) COMMENT '规格型号',
+    unit VARCHAR(20) COMMENT '计量单位',
+    book_quantity DECIMAL(12,2) COMMENT '账面数量',
+    actual_quantity DECIMAL(12,2) COMMENT '实盘数量',
+    difference DECIMAL(12,2) COMMENT '差异(=实盘-账面)',
+    unit_price DECIMAL(12,2) COMMENT '单价',
+    difference_amount DECIMAL(14,2) COMMENT '差异金额',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_check (check_id),
+    INDEX idx_material (material_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='盘点明细';

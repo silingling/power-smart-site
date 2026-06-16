@@ -16,16 +16,17 @@ import java.util.Map;
  */
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/adminConfig")
 public class AdminConfigController {
 
     private final AdminConfigService adminConfigService;
 
-    @PostMapping("/adminConfig/queryFirstConfigByName")
+    @PostMapping("/queryFirstConfigByName")
     public Result<SysConfig> queryFirstConfigByName(@RequestBody Map<String, Object> params) {
         return queryConfigByName(params);
     }
 
-    @PostMapping("/adminConfig/queryConfigByName")
+    @PostMapping("/queryConfigByName")
     public Result<SysConfig> queryConfigByName(@RequestBody Map<String, Object> params) {
         String configName = params != null && params.get("configName") != null
                 ? params.get("configName").toString() : null;
@@ -35,23 +36,23 @@ public class AdminConfigController {
         return Result.ok(adminConfigService.queryConfigByName(params));
     }
 
-    @PostMapping("/adminConfig/queryAdminConfig")
+    @PostMapping("/queryAdminConfig")
     public Result<PageResult<SysConfig>> queryAdminConfig(@RequestBody Map<String, Object> params) {
         return Result.ok(adminConfigService.queryAdminConfig(params));
     }
 
-    @PostMapping("/adminConfig/setAdminConfig")
+    @PostMapping("/setAdminConfig")
     public Result<Void> setAdminConfig(@RequestBody SysConfig entity) {
         adminConfigService.setAdminConfig(entity);
         return Result.ok();
     }
 
-    @PostMapping("/adminConfig/getLogWelcomeSpeechList")
+    @PostMapping("/getLogWelcomeSpeechList")
     public Result<List<SysConfig>> getLogWelcomeSpeechList() {
         return Result.ok(adminConfigService.getLogWelcomeSpeechList());
     }
 
-    @PostMapping("/adminConfig/setLogWelcomeSpeech")
+    @PostMapping("/setLogWelcomeSpeech")
     public Result<Void> setLogWelcomeSpeech(@RequestBody SysConfig entity) {
         adminConfigService.setLogWelcomeSpeech(entity);
         return Result.ok();

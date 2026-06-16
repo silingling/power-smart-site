@@ -38,6 +38,13 @@ public interface HazardService extends IService<HazardReport> {
     List<HazardWorkOrder> getOverdueOrders();
 
     /**
+     * 分页查询整改工单
+     */
+    com.baomidou.mybatisplus.extension.plugins.pagination.Page<HazardWorkOrder> queryWorkOrderPage(
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<HazardWorkOrder> page,
+            java.util.Map<String, Object> params);
+
+    /**
      * 查询隐患的完整进展（含工单、审批、文件）
      */
     Object getHazardProgress(Long hazardId);

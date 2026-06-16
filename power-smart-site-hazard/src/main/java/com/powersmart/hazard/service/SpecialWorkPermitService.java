@@ -4,7 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.powersmart.common.entity.Result;
+
 import com.powersmart.common.util.PageHelper;
 import com.powersmart.hazard.entity.PermitCheckItem;
 import com.powersmart.hazard.entity.SpecialWorkPermit;
@@ -109,59 +109,55 @@ public class SpecialWorkPermitService {
     // ===================== 状态流转 =====================
 
     /** 提交审批: draft → submitted */
-    public Result<Void> submit(Long id) {
+    public void submit(Long id) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
-        if (!"draft".equals(p.getStatus())) return Result.fail("当前状态不可提交");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
+        if (!"draft".equals(p.getStatus())) throw new IllegalStateException("当前状态不可提交");
         p.setStatus("submitted");
         p.setCurrentNode("safety_review");
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     /** 安全审核通过: submitted → approved(已签发) */
-    public Result<Void> approve(Long id, String reviewerName, String issuerSignature) {
+    public void approve(Long id, String reviewerName, String issuerSignature) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
-        if (!"submitted".equals(p.getStatus())) return Result.fail("当前状态不可审核通过");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
+        if (!"submitted".equals(p.getStatus())) throw new IllegalStateException("当前状态不可审核通过");
         p.setStatus("approved");
         p.setCurrentNode("approved");
         p.setIssuerName(reviewerName);
         p.setIssueTime(LocalDateTime.now());
         if (issuerSignature != null) p.setIssuerSignature(issuerSignature);
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     /** 驳回: submitted/safety_review → rejected */
-    public Result<Void> reject(Long id, String reason) {
+    public void reject(Long id, String reason) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
         if (!"submitted".equals(p.getStatus()) && !"safety_review".equals(p.getStatus()))
-            return Result.fail("当前状态不可驳回");
+            throw new IllegalStateException("当前状态不可驳回");
         p.setStatus("rejected");
         p.setCurrentNode("rejected");
         p.setRejectReason(reason);
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     /** 开始作业: approved → active */
-    public Result<Void> startWork(Long id) {
+    public void startWork(Long id) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
-        if (!"approved".equals(p.getStatus())) return Result.fail("作业票尚未签发，不能开始作业");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
+        if (!"approved".equals(p.getStatus())) throw new IllegalStateException("作业票尚未签发，不能开始作业");
         p.setStatus("active");
         p.setCurrentNode("active");
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     /** 完工: active → completed */
-    public Result<Void> complete(Long id, String completionNote, String closerName, String closerSignature) {
+    public void complete(Long id, String completionNote, String closerName, String closerSignature) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
-        if (!"active".equals(p.getStatus())) return Result.fail("当前状态不可完工");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
+        if (!"active".equals(p.getStatus())) throw new IllegalStateException("当前状态不可完工");
         p.setStatus("completed");
         p.setCurrentNode("completed");
         p.setActualEndTime(LocalDateTime.now());
@@ -170,49 +166,45 @@ public class SpecialWorkPermitService {
         p.setCloseTime(LocalDateTime.now());
         if (closerSignature != null) p.setCloserSignature(closerSignature);
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     /** 归档: completed → closed */
-    public Result<Void> close(Long id, String closerName) {
+    public void close(Long id, String closerName) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
-        if (!"completed".equals(p.getStatus())) return Result.fail("仅完工后的作业票可归档");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
+        if (!"completed".equals(p.getStatus())) throw new IllegalStateException("仅完工后的作业票可归档");
         p.setStatus("closed");
         p.setCurrentNode("closed");
         p.setCloserName(closerName);
         p.setCloseTime(LocalDateTime.now());
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     /** 作废: 任意非终态 → cancelled */
-    public Result<Void> cancel(Long id, String reason) {
+    public void cancel(Long id, String reason) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
         if (List.of("closed", "cancelled").contains(p.getStatus()))
-            return Result.fail("已归档或已作废的作业票不可取消");
+            throw new IllegalStateException("已归档或已作废的作业票不可取消");
         p.setStatus("cancelled");
         p.setCurrentNode("cancelled");
         p.setRejectReason(reason);
         p.setCloseTime(LocalDateTime.now());
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     // ===================== 延期 =====================
 
     /** 延期作业 */
-    public Result<Void> extendPermit(Long id, LocalDateTime newEndTime, String reason) {
+    public void extendPermit(Long id, LocalDateTime newEndTime, String reason) {
         SpecialWorkPermit p = permitMapper.selectById(id);
-        if (p == null) return Result.fail("作业票不存在");
+        if (p == null) throw new IllegalArgumentException("作业票不存在");
         if (!"active".equals(p.getStatus()) && !"approved".equals(p.getStatus()))
-            return Result.fail("当前状态不可延期");
+            throw new IllegalStateException("当前状态不可延期");
         p.setNewEndTime(newEndTime);
         p.setExtensionReason(reason);
         p.setExtendedCount(p.getExtendedCount() == null ? 1 : p.getExtendedCount() + 1);
         permitMapper.updateById(p);
-        return Result.ok();
     }
 
     // ===================== 检查项 =====================
@@ -252,7 +244,7 @@ public class SpecialWorkPermitService {
     // ===================== 辅助 =====================
 
     /** 生成票号: SP-2026-06-15-001 */
-    private String generatePermitNo() {
+    private synchronized String generatePermitNo() {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String maxNo = permitMapper.selectMaxPermitNoToday();
         int seq = 1;
@@ -279,10 +271,10 @@ public class SpecialWorkPermitService {
         if (p.containsKey("applicantId")) wp.setApplicantId(safeLong(p.get("applicantId")));
         if (p.containsKey("applicantName")) wp.setApplicantName(p.get("applicantName").toString());
         if (p.containsKey("applicantDept")) wp.setApplicantDept(p.get("applicantDept").toString());
-        if (p.containsKey("监护人Id")) wp.set监护人Id(safeLong(p.get("监护人Id")));
-        if (p.containsKey("监护人Name")) wp.set监护人Name(p.get("监护人Name").toString());
-        if (p.containsKey("负责人Id")) wp.set负责人Id(safeLong(p.get("负责人Id")));
-        if (p.containsKey("负责人Name")) wp.set负责人Name(p.get("负责人Name").toString());
+        if (p.containsKey("guardianId")) wp.setGuardianId(safeLong(p.get("guardianId")));
+        if (p.containsKey("guardianName")) wp.setGuardianName(p.get("guardianName").toString());
+        if (p.containsKey("principalId")) wp.setPrincipalId(safeLong(p.get("principalId")));
+        if (p.containsKey("principalName")) wp.setPrincipalName(p.get("principalName").toString());
         if (p.containsKey("attachmentJson")) wp.setAttachmentJson(p.get("attachmentJson").toString());
         if (p.containsKey("remark")) wp.setRemark(p.get("remark").toString());
         if (p.containsKey("createBy")) wp.setCreateBy(p.get("createBy").toString());
@@ -318,10 +310,10 @@ public class SpecialWorkPermitService {
         m.put("applicantId", wp.getApplicantId());
         m.put("applicantName", wp.getApplicantName());
         m.put("applicantDept", wp.getApplicantDept());
-        m.put("监护人Id", wp.get监护人Id());
-        m.put("监护人Name", wp.get监护人Name());
-        m.put("负责人Id", wp.get负责人Id());
-        m.put("负责人Name", wp.get负责人Name());
+        m.put("guardianId", wp.getGuardianId());
+        m.put("guardianName", wp.getGuardianName());
+        m.put("principalId", wp.getPrincipalId());
+        m.put("principalName", wp.getPrincipalName());
         m.put("status", wp.getStatus());
         m.put("statusName", STATUS_NAMES.getOrDefault(wp.getStatus(), wp.getStatus()));
         m.put("currentNode", wp.getCurrentNode());

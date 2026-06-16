@@ -110,6 +110,19 @@ public class HazardServiceImpl extends ServiceImpl<HazardReportMapper, HazardRep
     }
 
     @Override
+    public Page<HazardWorkOrder> queryWorkOrderPage(Page<HazardWorkOrder> page, java.util.Map<String, Object> params) {
+        LambdaQueryWrapper<HazardWorkOrder> wrapper = new LambdaQueryWrapper<HazardWorkOrder>()
+                .orderByDesc(HazardWorkOrder::getCreatedAt);
+        if (params != null) {
+            if (params.containsKey("status") && params.get("status") != null)
+                wrapper.eq(HazardWorkOrder::getStatus, Integer.parseInt(params.get("status").toString()));
+            if (params.containsKey("hazardId") && params.get("hazardId") != null)
+                wrapper.eq(HazardWorkOrder::getHazardId, Long.parseLong(params.get("hazardId").toString()));
+        }
+        return workOrderMapper.selectPage(page, wrapper);
+    }
+
+    @Override
     public Object getHazardStats(Long projectId) {
         long total = count(new LambdaQueryWrapper<HazardReport>()
                 .eq(HazardReport::getProjectId, projectId));

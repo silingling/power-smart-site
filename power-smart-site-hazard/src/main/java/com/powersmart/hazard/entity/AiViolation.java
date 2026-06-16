@@ -18,6 +18,7 @@ public class AiViolation {
     private Double confidence;         // 识别置信度 0-1
     private String snapshotUrl;        // 抓拍图片URL
     private String videoUrl;           // 短视频URL
+    private Long callbackId;           // 关联回调记录ID
     private Long workerId;             // 识别到的人员ID（如有）
     private Integer status;            // 0-未处理 1-已确认 2-误报
     private Long handledBy;

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/build/specialWorkPermit")
 public class SpecialWorkPermitController {
 
     private final SpecialWorkPermitService permitService;
@@ -28,7 +29,7 @@ public class SpecialWorkPermitController {
     // ==================== CRUD ====================
 
     /** 分页查询作业票列表 */
-    @PostMapping("/build/specialWorkPermit/querySpecialWorkPermitList")
+    @PostMapping("/querySpecialWorkPermitList")
     public Result<PageResult<Map<String, Object>>> queryList(@RequestBody(required = false) Map<String, Object> params) {
         Page<SpecialWorkPermit> page = permitService.queryPage(params);
         List<Map<String, Object>> list = page.getRecords().stream()
@@ -37,7 +38,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 获取作业票详情 */
-    @PostMapping("/build/specialWorkPermit/getSpecialWorkPermit/{id}")
+    @PostMapping("/getSpecialWorkPermit/{id}")
     public Result<Map<String, Object>> get(@PathVariable Long id) {
         SpecialWorkPermit wp = permitService.getById(id);
         if (wp == null) return Result.fail("作业票不存在");
@@ -45,7 +46,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 新增作业票（草稿） */
-    @PostMapping("/build/specialWorkPermit/addSpecialWorkPermit")
+    @PostMapping("/addSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "insert", description = "新增作业票")
     public Result<Map<String, Object>> add(@RequestBody Map<String, Object> params) {
         SpecialWorkPermit wp = permitService.buildFromParams(null, params);
@@ -57,7 +58,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 更新作业票 */
-    @PostMapping("/build/specialWorkPermit/setSpecialWorkPermit")
+    @PostMapping("/setSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "update", description = "修改作业票")
     public Result<Void> set(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
@@ -69,7 +70,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 删除作业票 */
-    @PostMapping("/build/specialWorkPermit/delSpecialWorkPermit/{id}")
+    @PostMapping("/delSpecialWorkPermit/{id}")
     @OperateLog(module = "特种作业票", action = "delete", description = "删除作业票 #{{id}}", targetId = "{{id}}")
     public Result<Void> delete(@PathVariable Long id) {
         permitService.delete(id);
@@ -78,47 +79,56 @@ public class SpecialWorkPermitController {
 
     // ==================== 状态流转 ====================
 
+    private Result<Void> execSafe(Runnable r) {
+        try {
+            r.run();
+            return Result.ok();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return Result.fail(e.getMessage());
+        }
+    }
+
     /** 提交审批: draft → submitted */
-    @PostMapping("/build/specialWorkPermit/submitSpecialWorkPermit")
+    @PostMapping("/submitSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "submit", description = "提交作业票审批")
     public Result<Void> submit(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.submit(id);
+        return execSafe(() -> permitService.submit(id));
     }
 
     /** 审核通过/签发: submitted → approved */
-    @PostMapping("/build/specialWorkPermit/approveSpecialWorkPermit")
+    @PostMapping("/approveSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "approve", description = "审核通过作业票")
     public Result<Void> approve(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String issuerName = params.containsKey("issuerName") ? params.get("issuerName").toString() : null;
         String issuerSignature = params.containsKey("issuerSignature") ? params.get("issuerSignature").toString() : null;
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.approve(id, issuerName, issuerSignature);
+        return execSafe(() -> permitService.approve(id, issuerName, issuerSignature));
     }
 
     /** 驳回: submitted → rejected */
-    @PostMapping("/build/specialWorkPermit/rejectSpecialWorkPermit")
+    @PostMapping("/rejectSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "reject", description = "驳回作业票")
     public Result<Void> reject(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String reason = params.containsKey("reason") ? params.get("reason").toString() : "";
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.reject(id, reason);
+        return execSafe(() -> permitService.reject(id, reason));
     }
 
     /** 开始作业: approved → active */
-    @PostMapping("/build/specialWorkPermit/startSpecialWorkPermit")
+    @PostMapping("/startSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "start", description = "开始作业")
     public Result<Void> startWork(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.startWork(id);
+        return execSafe(() -> permitService.startWork(id));
     }
 
     /** 完工: active → completed */
-    @PostMapping("/build/specialWorkPermit/completeSpecialWorkPermit")
+    @PostMapping("/completeSpecialWorkPermit")
     @OperateLog(module = "特种作业票", action = "complete", description = "完成作业")
     public Result<Void> complete(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
@@ -126,44 +136,44 @@ public class SpecialWorkPermitController {
         String closerName = params.containsKey("closerName") ? params.get("closerName").toString() : null;
         String closerSignature = params.containsKey("closerSignature") ? params.get("closerSignature").toString() : null;
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.complete(id, note, closerName, closerSignature);
+        return execSafe(() -> permitService.complete(id, note, closerName, closerSignature));
     }
 
     /** 归档: completed → closed */
-    @PostMapping("/build/specialWorkPermit/closeSpecialWorkPermit")
+    @PostMapping("/closeSpecialWorkPermit")
     public Result<Void> close(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String closerName = params.containsKey("closerName") ? params.get("closerName").toString() : null;
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.close(id, closerName);
+        return execSafe(() -> permitService.close(id, closerName));
     }
 
     /** 作废 */
-    @PostMapping("/build/specialWorkPermit/cancelSpecialWorkPermit")
+    @PostMapping("/cancelSpecialWorkPermit")
     public Result<Void> cancel(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String reason = params.containsKey("reason") ? params.get("reason").toString() : "";
         if (id == null) return Result.fail("id 不能为空");
-        return permitService.cancel(id, reason);
+        return execSafe(() -> permitService.cancel(id, reason));
     }
 
     // ==================== 延期 ====================
 
     /** 作业延期 */
-    @PostMapping("/build/specialWorkPermit/extendSpecialWorkPermit")
+    @PostMapping("/extendSpecialWorkPermit")
     public Result<Void> extend(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         LocalDateTime newEndTime = params.containsKey("newEndTime")
                 ? LocalDateTime.parse(params.get("newEndTime").toString()) : null;
         String reason = params.containsKey("reason") ? params.get("reason").toString() : "";
         if (id == null || newEndTime == null) return Result.fail("id 和 newEndTime 不能为空");
-        return permitService.extendPermit(id, newEndTime, reason);
+        return execSafe(() -> permitService.extendPermit(id, newEndTime, reason));
     }
 
     // ==================== 查询/统计 ====================
 
     /** 获取作业票类型列表 */
-    @PostMapping("/build/specialWorkPermit/getPermitTypeList")
+    @PostMapping("/getPermitTypeList")
     public Result<List<Map<String, Object>>> getPermitTypes() {
         List<Map<String, Object>> list = SpecialWorkPermitService.PERMIT_TYPE_NAMES.entrySet().stream()
                 .map(e -> {
@@ -176,7 +186,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 获取某项目的作业票状态统计 */
-    @PostMapping("/build/specialWorkPermit/getPermitStatusStats")
+    @PostMapping("/getPermitStatusStats")
     public Result<Map<String, Long>> getStatusStats(@RequestBody Map<String, Object> params) {
         Long projectId = safeLong(params.get("projectId"));
         if (projectId == null) return Result.fail("projectId 不能为空");
@@ -184,7 +194,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 获取某项目进行中的作业票 */
-    @PostMapping("/build/specialWorkPermit/getActivePermitList")
+    @PostMapping("/getActivePermitList")
     public Result<List<Map<String, Object>>> getActiveList(@RequestBody Map<String, Object> params) {
         Long projectId = safeLong(params.get("projectId"));
         if (projectId == null) return Result.fail("projectId 不能为空");
@@ -195,7 +205,7 @@ public class SpecialWorkPermitController {
     // ==================== 检查项管理 ====================
 
     /** 获取检查项列表（可按类型过滤） */
-    @PostMapping("/build/specialWorkPermit/getPermitCheckItems")
+    @PostMapping("/getPermitCheckItems")
     public Result<List<PermitCheckItem>> getCheckItems(@RequestBody(required = false) Map<String, Object> params) {
         String permitType = params != null && params.containsKey("permitType")
                 ? params.get("permitType").toString() : null;
@@ -203,7 +213,7 @@ public class SpecialWorkPermitController {
     }
 
     /** 新增检查项 */
-    @PostMapping("/build/specialWorkPermit/addPermitCheckItem")
+    @PostMapping("/addPermitCheckItem")
     public Result<Void> addCheckItem(@RequestBody Map<String, Object> params) {
         PermitCheckItem item = new PermitCheckItem();
         item.setPermitType(safeStr(params.get("permitType")));

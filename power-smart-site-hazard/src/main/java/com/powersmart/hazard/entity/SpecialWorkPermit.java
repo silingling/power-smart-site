@@ -41,10 +41,10 @@ public class SpecialWorkPermit {
     private Long applicantId;
     private String applicantName;
     private String applicantDept;
-    private Long监护人Id;
-    private String监护人Name;
-    private Long负责人Id;
-    private String负责人Name;
+    private Long guardianId;                // 监护人ID
+    private String guardianName;             // 监护人姓名
+    private Long principalId;                // 负责人ID
+    private String principalName;            // 负责人姓名
 
     // ── 审批流 ──
     private String status;                   // draft/submitted/safety_review/approved/active/completed/closed/rejected/cancelled

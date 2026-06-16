@@ -20,12 +20,13 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/build/fenceAlertEvent")
 public class FenceAlertEventController {
 
     private final SafetyFenceService fenceService;
 
     /** 分页查询告警事件 */
-    @PostMapping("/build/fenceAlertEvent/queryFenceAlertEventList")
+    @PostMapping("/queryFenceAlertEventList")
     public Result<PageResult<Map<String, Object>>> queryList(@RequestBody(required = false) Map<String, Object> params) {
         Page<FenceAlertEvent> page = fenceService.queryEventPage(params);
         List<Map<String, Object>> list = page.getRecords().stream()
@@ -34,7 +35,7 @@ public class FenceAlertEventController {
     }
 
     /** 获取告警详情 */
-    @PostMapping("/build/fenceAlertEvent/getFenceAlertEvent/{id}")
+    @PostMapping("/getFenceAlertEvent/{id}")
     public Result<Map<String, Object>> get(@PathVariable Long id) {
         FenceAlertEvent event = fenceService.getEventById(id);
         if (event == null) return Result.fail("告警事件不存在");
@@ -42,7 +43,7 @@ public class FenceAlertEventController {
     }
 
     /** 处理告警（标记为已处理） */
-    @PostMapping("/build/fenceAlertEvent/processFenceAlertEvent")
+    @PostMapping("/processFenceAlertEvent")
     public Result<Void> process(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         String processedBy = params.containsKey("processedBy") ? params.get("processedBy").toString() : null;
@@ -52,7 +53,7 @@ public class FenceAlertEventController {
     }
 
     /** 忽略告警 */
-    @PostMapping("/build/fenceAlertEvent/ignoreFenceAlertEvent")
+    @PostMapping("/ignoreFenceAlertEvent")
     public Result<Void> ignore(@RequestBody Map<String, Object> params) {
         Long id = safeLong(params.get("id"));
         if (id == null) return Result.fail("id 不能为空");
@@ -61,7 +62,7 @@ public class FenceAlertEventController {
     }
 
     /** 获取未处理的告警数量 */
-    @PostMapping("/build/fenceAlertEvent/getPendingFenceAlertCount")
+    @PostMapping("/getPendingFenceAlertCount")
     public Result<Map<String, Long>> getPendingCount(@RequestBody(required = false) Map<String, Object> params) {
         Map<String, Object> query = new LinkedHashMap<>();
         query.put("status", "pending");

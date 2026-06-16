@@ -139,6 +139,30 @@ spring:
           uri: lb://power-smart-hazard
           predicates: [Path=/build/specialWorkPermit/**]
 
+        # AI摄像头管理
+        - id: ai-camera
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/aiCamera/**]
+          filters: [StripPrefix=0]
+        - id: ai-snapshot
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/aiSnapshot/**]
+          filters: [StripPrefix=0]
+        - id: ai-detection-callback
+          uri: lb://power-smart-hazard
+          predicates: [Path=/build/aiDetectionCallback/**]
+          filters: [StripPrefix=0]
+
+        # 报表导出
+        - id: report-export
+          uri: lb://power-smart-system
+          predicates: [Path=/build/reportExport/**]
+          filters: [StripPrefix=0]
+        - id: report-template
+          uri: lb://power-smart-system
+          predicates: [Path=/build/reportTemplate/**]
+          filters: [StripPrefix=0]
+
         # 审计日志
         - id: operate-log
           uri: lb://power-smart-system
