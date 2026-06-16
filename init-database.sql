@@ -274,7 +274,7 @@ CREATE TABLE ai_violation (
 ) ENGINE=InnoDB COMMENT='AI违规识别记录';
 
 -- ========================================
--- Phase 1 新增：萤丰前端对接 — 分包商/工种/进出场/摄像头/位置台账
+-- Phase 1 新增：tongye前端对接 — 分包商/工种/进出场/摄像头/位置台账
 -- ========================================
 
 CREATE TABLE labour_subcontractor (

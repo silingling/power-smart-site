@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 安全资料变更日志（对应萤丰 build/safetyMaterialChangelog）
+ * 安全资料变更日志（对应tongye build/safetyMaterialChangelog）
  */
 @Data
 @TableName("safety_material_changelog")

@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 安全资料（对应萤丰 build/safetyMaterial）
+ * 安全资料（对应tongye build/safetyMaterial）
  */
 @Data
 @TableName("safety_material")

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 
 /**
- * 设备资产（对应萤丰 build/equipmentAssets）
+ * 设备资产（对应tongye build/equipmentAssets）
  */
 @Data
 @TableName("equipment_assets")

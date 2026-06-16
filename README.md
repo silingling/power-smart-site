@@ -1,6 +1,6 @@
 # 电力智慧工地平台 (Power Smart Site)
 
-> **混合架构**: 自研 Spring Cloud 微服务后端 + 兼容萤丰YFConstruction规范的前端
+> **混合架构**: 自研 Spring Cloud 微服务后端 + 兼容 tongye TYConstruction 规范的前端
 
 ## 🏗️ 技术栈
 
@@ -12,7 +12,7 @@
 | **数据库** | MySQL 8.0 + InfluxDB 2.x (时序) + Redis |
 | **IoT** | MQTT (Eclipse Paho) + Netty |
 | **文档** | Knife4j (Swagger) |
-| **前端** | 自有前端，API兼容萤丰YFConstruction规范 |
+| **前端** | 自有前端，API 兼容 tongye TYConstruction 规范 |
 
 ## 📁 项目结构
 
@@ -52,10 +52,10 @@ power-smart-dashboard  # 端口 8086
 
 - [x] Phase 1: 后端骨架 + 前端 API 适配 (113文件/3742行)
 - [ ] Phase 2: 网关路由 + 登录鉴权
-- [ ] Phase 3: 前端页面定制（基于萤丰规范）
+- [ ] Phase 3: 前端页面定制（基于 tongye 规范）
 - [ ] Phase 4: IoT 设备接入 + 告警引擎完善
 - [ ] Phase 5: 电力行业专项 (变电站/输电/配电)
 
 ## 🔗 参考
 
-- 萤丰YFConstruction（参考）：https://gitee.com/qingyun-software/YFConstruction
+- tongye TYConstruction（参考）：https://gitee.com/qingyun-software/TYConstruction

@@ -1,6 +1,6 @@
 # 山西同业电力 - 智慧工地前端
 
-基于萤丰 YFConstruction 前端规范定制。
+基于tongye TYConstruction 前端规范定制。
 
 ## 修改内容
 

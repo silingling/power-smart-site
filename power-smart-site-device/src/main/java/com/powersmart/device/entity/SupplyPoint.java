@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 /**
- * 水电供应点（对应萤丰 adminSupplyPoint）
+ * 水电供应点（对应tongye adminSupplyPoint）
  */
 @Data
 @TableName("supply_point")

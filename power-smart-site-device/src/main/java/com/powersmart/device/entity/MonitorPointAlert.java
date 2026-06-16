@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 监测点告警（对应萤丰 build/monitorPointAlert）
+ * 监测点告警（对应tongye build/monitorPointAlert）
  */
 @Data
 @TableName("monitor_point_alert")

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 /**
- * 评价等级（对应萤丰 build/evalLevel）
+ * 评价等级（对应tongye build/evalLevel）
  */
 @Data
 @TableName("eval_level")

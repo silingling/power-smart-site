@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 系统配置（对应萤丰 adminConfig）
+ * 系统配置（对应tongye adminConfig）
  */
 @Data
 @TableName("sys_config")

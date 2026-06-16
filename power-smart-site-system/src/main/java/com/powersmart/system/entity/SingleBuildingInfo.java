@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 
 /**
- * 单体楼栋信息（对应萤丰 build/singleBuildingInfo）
+ * 单体楼栋信息（对应tongye build/singleBuildingInfo）
  */
 @Data
 @TableName("single_building_info")
